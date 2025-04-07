@@ -1,0 +1,65 @@
+services:
+  goflow2:
+    image: meirdev/goflow2:v1.3.0
+    container_name: goflow2
+    ports:
+      - "6343:6343/udp"
+      - "2055:2055/udp"
+      - "8080:8080"
+    restart: always
+    command:
+      - -transport=clickhouse
+      - -transport.clickhouse.dsn=clickhouse://user:password@clickhouse:9000/default
+      - -format=bin
+    depends_on:
+      - clickhouse
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.3-alpine
+    container_name: clickhouse
+    environment:
+      - CLICKHOUSE_DB=default
+      - CLICKHOUSE_USER=user
+      - CLICKHOUSE_PASSWORD=password
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+      - "9363:9363"
+    volumes:
+      - ./clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./clickhouse/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
+      - clickhouse:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+    depends_on:
+      - postgres
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    restart: always
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus:/prometheus
+
+  postgres:
+    image: postgres:17.4
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres:/var/lib/postgresql/data
+
+volumes:
+  clickhouse:
+  clickhouse-logs:
+  prometheus:
+  postgres:
