@@ -1,13 +1,6 @@
-create table accounts
+create table routers
 (
     id varchar(32) not null primary key,
-    name text not null
-);
-
-create table configs
-(
-    id varchar(32) not null primary key,
-    account_id varchar(32) not null references accounts(id),
     name text not null,
     router_ip inet not null,
     default_sampling int
@@ -20,7 +13,6 @@ create type rule_zscore_target as enum ('bits', 'packets');
 create table rules
 (
     id varchar(32) not null primary key,
-    account_id varchar(32) not null references accounts(id),
     name text not null,
     type rule_type not null,
     threshold_bandwidth int,
