@@ -34,16 +34,6 @@ services:
     depends_on:
       - postgres
 
-  prometheus:
-    image: prom/prometheus:v3.1.0
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    restart: always
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus:/prometheus
-
   postgres:
     image: postgres:17.4
     container_name: postgres
@@ -61,5 +51,4 @@ services:
 volumes:
   clickhouse:
   clickhouse-logs:
-  prometheus:
   postgres:
