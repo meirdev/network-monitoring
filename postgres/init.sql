@@ -18,6 +18,6 @@ create table rules
     threshold_bandwidth int,
     threshold_packet int,
     zscore_target rule_zscore_target,
-    duration int not null,
+    duration interval not null,
     prefixes cidr[] not null,
 );
