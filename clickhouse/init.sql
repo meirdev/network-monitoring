@@ -92,7 +92,6 @@ CREATE MATERIALIZED VIEW flows_mv TO flows AS
         src_addr,
         dst_addr,
 
-        etype,
         proto,
         tcp_flags,
 
@@ -108,7 +107,6 @@ CREATE MATERIALIZED VIEW flows_mv TO flows AS
         sampler_address,
         src_addr,
         dst_addr,
-        etype,
         proto,
         tcp_flags,
         src_port,
