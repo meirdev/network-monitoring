@@ -1,8 +1,9 @@
 import contextlib
-from typing import Annotated, AsyncIterator, Literal
+from typing import Annotated, AsyncIterator, TypedDict
 
 import asyncpg
 import clickhouse_connect
+import clickhouse_connect.driver.asyncclient as clickhouse_connect_async
 from fastapi import Depends, FastAPI, HTTPException
 
 from src.dto import Router, Rule
@@ -10,27 +11,45 @@ from src.settings import settings
 
 type Connection = asyncpg.pool.PoolConnectionProxy[asyncpg.Record]
 
+type ClickHouseClient = clickhouse_connect_async.AsyncClient
+
+
+class AppExtra(TypedDict):
+    postgres_client: asyncpg.Pool[asyncpg.Record]
+    clickhouse_client: ClickHouseClient
+
 
 class App(FastAPI):
-    extra: dict[Literal["pool"], asyncpg.Pool[asyncpg.Record]]
+    extra: AppExtra
 
 
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
-    pg_dns = settings.pg_dns.unicode_string()
+    pg_dsn = settings.pg_dsn.unicode_string()
+    ch_dsn = settings.ch_dsn.unicode_string()
 
-    async with asyncpg.create_pool(pg_dns) as pool:
-        app.extra["pool"] = pool
+    clickhouse_async_client = await clickhouse_connect.get_async_client(dsn=ch_dsn)
+
+    async with (
+        asyncpg.create_pool(pg_dsn) as pool,
+        clickhouse_async_client as ch_client,
+    ):
+        app.extra["postgres_client"] = pool
+        app.extra["clickhouse_client"] = ch_client
 
         yield
 
 
 async def get_session() -> AsyncIterator[Connection]:
-    async with app.extra["pool"].acquire() as connection:
+    async with app.extra["postgres_client"].acquire() as connection:
         yield connection
 
 
 type Session = Annotated[Connection, Depends(get_session)]
+
+type ClickHouse = Annotated[
+    ClickHouseClient, Depends(lambda: app.extra["clickhouse_client"])
+]
 
 
 app = App(lifespan=lifespan)
@@ -136,7 +155,12 @@ async def delete_rule(session: Session, rule_id: str):
 
 
 @app.get("/monitoring", tags=["monitoring"])
-async def monitoring():
-    client = await clickhouse_connect.get_async_client(dsn="")
-
-    pass
+async def monitoring(clickhouse: ClickHouse):
+    await clickhouse.query_df(
+        """
+        SELECT
+            *
+        FROM
+            flows
+        """
+    )
