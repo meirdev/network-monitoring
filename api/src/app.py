@@ -8,6 +8,8 @@ from fastapi import Depends, FastAPI, HTTPException
 from src.dto import Router, Rule
 from src.settings import settings
 
+type Connection = asyncpg.pool.PoolConnectionProxy[asyncpg.Record]
+
 
 class App(FastAPI):
     extra: dict[Literal["pool"], asyncpg.Pool[asyncpg.Record]]
@@ -21,9 +23,6 @@ async def lifespan(app: FastAPI):
         app.extra["pool"] = pool
 
         yield
-
-
-type Connection = asyncpg.pool.PoolConnectionProxy[asyncpg.Record]
 
 
 async def get_session() -> AsyncIterator[Connection]:
