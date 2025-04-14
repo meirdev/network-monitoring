@@ -1,10 +1,10 @@
 import contextlib
-from typing import Annotated, AsyncIterator, TypedDict
+from typing import Annotated, AsyncIterator, TypedDict, cast
 
 import asyncpg
 import clickhouse_connect
 import clickhouse_connect.driver.asyncclient as clickhouse_connect_async
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 
 from src.dto import Router, Rule
 from src.settings import settings
@@ -40,8 +40,10 @@ async def lifespan(app: FastAPI):
         yield
 
 
-async def get_session() -> AsyncIterator[Connection]:
-    async with app.extra["postgres_client"].acquire() as connection:
+async def get_session(request: Request) -> AsyncIterator[Connection]:
+    app_ = cast(App, request.app)
+
+    async with app_.extra["postgres_client"].acquire() as connection:
         yield connection
 
 

@@ -1,4 +1,4 @@
-from pydantic import ClickHouseDsn, PostgresDsn, SecretStr
+from pydantic import ClickHouseDsn, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,8 +7,6 @@ class Settings(BaseSettings):
 
     pg_dsn: PostgresDsn
     ch_dsn: ClickHouseDsn
-
-    api_key: SecretStr
 
 
 settings = Settings() # type: ignore
