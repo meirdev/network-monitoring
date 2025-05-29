@@ -27,3 +27,9 @@ pre-made dashboards.
 
 Note: if you are using Colima as the engine, it does not support UDP port forwarding. Flows won't be collected.
 It is possible to run GoFlow2 locally and feed into kafka if you add an `/etc/hosts` entry `127.0.0.1 kafka`.
+
+## Grafana Dashboards
+
+<div align="center">
+  <img src="./assets/grafana-dashboard-mbps.png" alt="Grafana Dashboard - Mbps" width="600">
+</div>
