@@ -272,7 +272,7 @@
               }
             ]
           },
-          "unit": "decbytes"
+          "unit": "bps"
         },
         "overrides": []
       },
