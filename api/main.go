@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"log"
+	"slices"
+	"strconv"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
@@ -11,21 +13,40 @@ import (
 
 var conn driver.Conn
 
+var columns = []string{
+	"src_addr",
+	"dst_addr",
+	"src_port",
+	"dst_port",
+	"etype",
+	"proto",
+	"tcp_flags",
+	"sampler_address",
+}
+
 func GetTop(c *gin.Context) {
 	column := c.Query("column")
 	if column == "" {
 		c.JSON(400, gin.H{"error": "column parameter is required"})
 		return
 	}
-
-	var query string
+	if slices.Contains(columns, column) == false {
+		c.JSON(400, gin.H{"error": "invalid column parameter"})
+		return
+	}
 
 	k := c.Query("k")
+	if _, err := strconv.Atoi(k); err != nil && k != "" {
+		c.JSON(400, gin.H{"error": "k parameter must be a valid integer or empty"})
+		return
+	}
 
 	chCtx := clickhouse.Context(context.Background(), clickhouse.WithParameters(clickhouse.Parameters{
 		"column": column,
 		"k":      k,
 	}))
+
+	var query string
 
 	if k == "" {
 		query = `
@@ -33,7 +54,6 @@ func GetTop(c *gin.Context) {
 			SELECT {column:Identifier} AS column, sum(bytes) AS bytes
 			FROM flows_raw
 			GROUP BY column
-			HAVING bytes > 0
 			ORDER BY bytes DESC
 		)
 		SELECT toString(column) AS column, bytes
