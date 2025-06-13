@@ -24,6 +24,11 @@ var columns = []string{
 	"sampler_address",
 }
 
+var aggs = []string{
+	"bytes",
+	"packets",
+}
+
 func GetTop(c *gin.Context) {
 	column := c.Query("column")
 	if column == "" {
@@ -41,9 +46,20 @@ func GetTop(c *gin.Context) {
 		return
 	}
 
+	agg := c.Query("agg")
+	if agg == "" {
+		c.JSON(400, gin.H{"error": "agg parameter is required"})
+		return
+	}
+	if slices.Contains(aggs, agg) == false {
+		c.JSON(400, gin.H{"error": "invalid agg parameter"})
+		return
+	}
+
 	chCtx := clickhouse.Context(context.Background(), clickhouse.WithParameters(clickhouse.Parameters{
 		"column": column,
 		"k":      k,
+		"agg":    agg,
 	}))
 
 	var query string
@@ -51,21 +67,21 @@ func GetTop(c *gin.Context) {
 	if k == "" {
 		query = `
 		WITH top AS (
-			SELECT {column:Identifier} AS column, sum(bytes) AS bytes
+			SELECT {column:Identifier} AS column, sum({agg:Identifier}) AS agg
 			FROM flows_raw
 			GROUP BY column
-			ORDER BY bytes DESC
+			ORDER BY agg DESC
 		)
-		SELECT toString(column) AS column, bytes
+		SELECT toString(column) AS column, agg
 		FROM top
 		`
 	} else {
 		query = `
 		WITH top_k AS (
-			SELECT arrayJoin(approx_top_sum({k:UInt32})({column:Identifier}, bytes)) AS i
+			SELECT arrayJoin(approx_top_sum({k:UInt32})({column:Identifier}, {agg:Identifier})) AS i
 			FROM flows_raw
 		)
-		SELECT toString(i.1) AS column, i.2 AS bytes
+		SELECT toString(i.1) AS column, i.2 AS agg
 		FROM top_k
 		`
 	}
@@ -79,14 +95,14 @@ func GetTop(c *gin.Context) {
 
 	var results []struct {
 		Column string `ch:"column"`
-		Bytes  uint64 `ch:"bytes"`
+		Agg    uint64 `ch:"agg"`
 	}
 	for rows.Next() {
 		var result struct {
 			Column string `ch:"column"`
-			Bytes  uint64 `ch:"bytes"`
+			Agg    uint64 `ch:"agg"`
 		}
-		if err := rows.Scan(&result.Column, &result.Bytes); err != nil {
+		if err := rows.Scan(&result.Column, &result.Agg); err != nil {
 			c.Error(err)
 			return
 		}
