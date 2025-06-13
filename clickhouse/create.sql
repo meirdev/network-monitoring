@@ -249,7 +249,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows_raw_mv TO flows_raw AS
         dst_port
     FROM temp;
 
-CREATE TABLE IF NOT EXISTS flows_prefixes
+CREATE TABLE IF NOT EXISTS prefix_flows_1m
 (
     time_flow_start DateTime,
 
@@ -264,7 +264,7 @@ PARTITION BY toDate(time_flow_start)
 ORDER BY (prefix, time_flow_start)
 TTL toDate(time_flow_start) + INTERVAL 30 DAY;
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS flows_prefixes_mv TO flows_prefixes AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS prefix_flows_1m_mv TO prefix_flows_1m AS
     SELECT
         toStartOfMinute(time_flow_start) AS time_flow_start,
 
