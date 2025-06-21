@@ -67,7 +67,7 @@ CREATE DICTIONARY IF NOT EXISTS dictionaries.routers (
 )
 PRIMARY KEY router_ip
 LAYOUT(HASHED())
-SOURCE (CLICKHOUSE(query 'SELECT router_ip, default_sampling FROM routers FINAL' user 'default' password 'password'))
+SOURCE (CLICKHOUSE(query 'SELECT name, router_ip, default_sampling FROM routers FINAL' user 'default' password 'password'))
 LIFETIME(360);
 
 CREATE DICTIONARY IF NOT EXISTS dictionaries.prefixes (
