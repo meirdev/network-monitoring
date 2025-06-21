@@ -22,7 +22,25 @@ CREATE TABLE IF NOT EXISTS flows
     tcp_flags UInt32,
 
     src_port UInt32,
-    dst_port UInt32
+    dst_port UInt32,
+
+    
+    src_as UInt32,
+    dst_as UInt32,
+
+    next_hop FixedString(16),
+    next_hop_as UInt32,
+
+    in_if UInt32,
+    out_if UInt32,
+
+    src_mac UInt64,
+    dst_mac UInt64,
+
+    forwarding_status UInt32,
+
+    observation_domain_id UInt32,
+    observation_point_id UInt32
 )
 ENGINE = Kafka()
 SETTINGS
@@ -188,7 +206,25 @@ CREATE TABLE IF NOT EXISTS flows_raw
     tcp_flags_string LowCardinality(String) MATERIALIZED convertFlowTcpFlagsToString(tcp_flags),
 
     src_port UInt16,
-    dst_port UInt16
+    dst_port UInt16,
+
+    src_as UInt32,
+    dst_as UInt32,
+
+    next_hop String,
+    next_hop_as UInt32,
+
+    in_if UInt32,
+    out_if UInt32,
+
+    src_mac String,
+    dst_mac String,
+
+    forwarding_status UInt32,
+    forwarding_status_string LowCardinality(String) MATERIALIZED convertFlowForwardingStatusToString(forwarding_status),
+
+    observation_domain_id UInt32,
+    observation_point_id UInt32
 )
 ENGINE = MergeTree()
 PARTITION BY toDate(time_flow_start)
@@ -221,7 +257,24 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows_raw_mv TO flows_raw AS
             tcp_flags,
 
             src_port,
-            dst_port
+            dst_port,
+
+            src_as,
+            dst_as,
+
+            convertFixedStringIpToString(next_hop) AS next_hop,
+            next_hop_as,
+
+            in_if,
+            out_if,
+
+            MACNumToString(src_mac) AS src_mac,
+            MACNumToString(dst_mac) AS dst_mac,
+
+            forwarding_status,
+
+            observation_domain_id,
+            observation_point_id
         FROM flows
     )
     SELECT
@@ -246,7 +299,24 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows_raw_mv TO flows_raw AS
         tcp_flags,
 
         src_port,
-        dst_port
+        dst_port,
+
+        src_as,
+        dst_as,
+
+        next_hop,
+        next_hop_as,
+
+        in_if,
+        out_if,
+
+        src_mac,
+        dst_mac,
+
+        forwarding_status,
+
+        observation_domain_id,
+        observation_point_id
     FROM temp;
 
 CREATE TABLE IF NOT EXISTS prefix_flows_1m
