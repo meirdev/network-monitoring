@@ -346,7 +346,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS prefix_flows_1m_mv TO prefix_flows_1m AS
     WHERE prefix <> ''
     GROUP BY prefix, time_flow_start;
 
-CREATE FUNCTION IF NOT EXISTS fire_static_bps_threshold_alert AS (prefix, threshold, duration, `datetime`) ->
+CREATE FUNCTION IF NOT EXISTS fireStaticBpsThresholdAlert AS (prefix, threshold, duration, `datetime`) ->
 (
     WITH result AS (
         SELECT
@@ -362,9 +362,9 @@ CREATE FUNCTION IF NOT EXISTS fire_static_bps_threshold_alert AS (prefix, thresh
 );
 
 -- Usage example (check if the 10.0.0.0/24 prefix has exceeded the 100 Mbps threshold for the entire last hour):
--- SELECT fire_static_bps_threshold_alert('10.0.0.0/24', 100000000, INTERVAL 1 HOUR, now());
+-- SELECT fireStaticBpsThresholdAlert('10.0.0.0/24', 100000000, INTERVAL 1 HOUR, now());
 
-CREATE FUNCTION IF NOT EXISTS fire_static_pps_threshold_alert AS (prefix, threshold, duration, `datetime`) ->
+CREATE FUNCTION IF NOT EXISTS fireStaticPpsThresholdAlert AS (prefix, threshold, duration, `datetime`) ->
 (
     WITH result AS (
         SELECT
