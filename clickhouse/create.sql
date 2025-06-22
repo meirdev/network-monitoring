@@ -387,6 +387,9 @@ CREATE FUNCTION IF NOT EXISTS fireStaticPpsThresholdAlert AS (ip_prefix, thresho
 -- medium: z-score >= 3
 -- low: z-score >= 2
 
+-- Usage example:
+-- SELECT fireDynamicBpsThresholdAlert('10.0.0.0/24', 'medium', now());
+
 CREATE FUNCTION IF NOT EXISTS fireDynamicBpsThresholdAlert AS (ip_prefix, sensitivity, `datetime`) ->
 (
     WITH short_window AS (
