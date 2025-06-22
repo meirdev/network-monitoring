@@ -383,9 +383,9 @@ CREATE FUNCTION IF NOT EXISTS fireStaticPpsThresholdAlert AS (ip_prefix, thresho
 -- https://developers.cloudflare.com/magic-network-monitoring/rules/dynamic-threshold/#how-the-dynamic-rule-threshold-is-calculated
 
 -- sensitivity levels:
--- high: z-score >= 4
+-- low: z-score >= 4
 -- medium: z-score >= 3
--- low: z-score >= 2
+-- high: z-score >= 2
 
 -- Usage example:
 -- SELECT fireDynamicBpsThresholdAlert('10.0.0.0/24', 'medium', now());
