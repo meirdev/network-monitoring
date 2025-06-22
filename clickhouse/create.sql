@@ -345,3 +345,36 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS prefix_flows_1m_mv TO prefix_flows_1m AS
     FROM flows_raw
     WHERE prefix <> ''
     GROUP BY prefix, time_flow_start;
+
+CREATE FUNCTION IF NOT EXISTS fire_static_bps_threshold_alert AS (prefix, threshold, duration, `datetime`) ->
+(
+    WITH result AS (
+        SELECT
+            total_bytes * 8 / 60 AS bps,
+            bps >= threshold AS is_exceeded
+        FROM prefix_flows_1m FINAL
+        WHERE
+            prefix = prefix AND
+            time_flow_start >= `datetime` - duration AND
+            time_flow_start <= `datetime`
+    )
+    SELECT countIf(is_exceeded = true) = date_diff('minute', `datetime` - duration, `datetime`) FROM result
+);
+
+-- Usage example (check if the 10.0.0.0/24 prefix has exceeded the 100 Mbps threshold for the entire last hour):
+-- SELECT fire_static_bps_threshold_alert('10.0.0.0/24', 100000000, INTERVAL 1 HOUR, now());
+
+CREATE FUNCTION IF NOT EXISTS fire_static_pps_threshold_alert AS (prefix, threshold, duration, relative_time) ->
+(
+    WITH result AS (
+        SELECT
+            total_packets / 60 AS pps,
+            pps >= threshold AS is_exceeded
+        FROM prefix_flows_1m FINAL
+        WHERE
+            prefix = prefix AND
+            time_flow_start >= relative_time - duration AND
+            time_flow_start <= relative_time
+    )
+    SELECT countIf(is_exceeded = true) = date_diff('minute', `datetime` - duration, `datetime`) FROM result
+);
