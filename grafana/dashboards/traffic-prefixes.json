@@ -412,7 +412,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-4h",
     "to": "now"
   },
   "timepicker": {},
