@@ -418,9 +418,9 @@ CREATE FUNCTION IF NOT EXISTS fireDynamicBpsThresholdAlert AS (ip_prefix, sensit
     )
     SELECT
         (
-            (sensitivity = 'high' AND result.z_score >= 4) OR
+            (sensitivity = 'low' AND result.z_score >= 4) OR
             (sensitivity = 'medium' AND result.z_score >= 3) OR
-            (sensitivity = 'low' AND result.z_score >= 2)
+            (sensitivity = 'high' AND result.z_score >= 2)
         )
     FROM result
 );
@@ -453,9 +453,9 @@ CREATE FUNCTION IF NOT EXISTS fireDynamicPpsThresholdAlert AS (ip_prefix, sensit
     )
     SELECT
         (
-            (sensitivity = 'high' AND result.z_score >= 4) OR
+            (sensitivity = 'low' AND result.z_score >= 4) OR
             (sensitivity = 'medium' AND result.z_score >= 3) OR
-            (sensitivity = 'low' AND result.z_score >= 2)
+            (sensitivity = 'high' AND result.z_score >= 2)
         )
     FROM result
 );
