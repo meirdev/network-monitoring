@@ -24,7 +24,6 @@ CREATE TABLE IF NOT EXISTS flows
     src_port UInt32,
     dst_port UInt32,
 
-    
     src_as UInt32,
     dst_as UInt32,
 
