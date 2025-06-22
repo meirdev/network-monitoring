@@ -364,7 +364,7 @@ CREATE FUNCTION IF NOT EXISTS fire_static_bps_threshold_alert AS (prefix, thresh
 -- Usage example (check if the 10.0.0.0/24 prefix has exceeded the 100 Mbps threshold for the entire last hour):
 -- SELECT fire_static_bps_threshold_alert('10.0.0.0/24', 100000000, INTERVAL 1 HOUR, now());
 
-CREATE FUNCTION IF NOT EXISTS fire_static_pps_threshold_alert AS (prefix, threshold, duration, relative_time) ->
+CREATE FUNCTION IF NOT EXISTS fire_static_pps_threshold_alert AS (prefix, threshold, duration, `datetime`) ->
 (
     WITH result AS (
         SELECT
@@ -373,8 +373,8 @@ CREATE FUNCTION IF NOT EXISTS fire_static_pps_threshold_alert AS (prefix, thresh
         FROM prefix_flows_1m FINAL
         WHERE
             prefix = prefix AND
-            time_flow_start >= relative_time - duration AND
-            time_flow_start <= relative_time
+            time_flow_start >= `datetime` - duration AND
+            time_flow_start <= `datetime`
     )
     SELECT countIf(is_exceeded = true) = date_diff('minute', `datetime` - duration, `datetime`) FROM result
 );
