@@ -22,6 +22,8 @@ var columns = []string{
 	"proto",
 	"tcp_flags",
 	"sampler_address",
+	"dst_as",
+	"src_as",
 }
 
 var aggs = []string{
