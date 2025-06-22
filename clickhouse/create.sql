@@ -379,3 +379,75 @@ CREATE FUNCTION IF NOT EXISTS fireStaticPpsThresholdAlert AS (ip_prefix, thresho
     SELECT countIf(is_exceeded = true) = date_diff('minute', `datetime` - duration, `datetime`) FROM result
 );
 
+-- the formula for calculating the dynamic threshold is based on:
+-- https://developers.cloudflare.com/magic-network-monitoring/rules/dynamic-threshold/#how-the-dynamic-rule-threshold-is-calculated
+
+CREATE FUNCTION IF NOT EXISTS fireDynamicBpsThresholdAlert AS (ip_prefix, sensitivity, `datetime`) ->
+(
+    WITH short_window AS (
+        SELECT
+            avg(total_bytes * 8 / 60) AS avg_bps
+        FROM prefix_flows_1m FINAL
+        WHERE
+            prefix = ip_prefix AND
+            time_flow_start >= `datetime` - INTERVAL 5 MINUTE AND
+            time_flow_start <= `datetime`
+    ),
+    long_window AS (
+        SELECT
+            stddevPopStable(total_bytes * 8 / 60) AS stddev_bps,
+            avg(total_bytes * 8 / 60) AS avg_bps
+        FROM prefix_flows_1m FINAL
+        WHERE
+            prefix = ip_prefix AND
+            time_flow_start >= `datetime` - INTERVAL 4 HOUR AND
+            time_flow_start <= `datetime`
+    ),
+    result AS (
+        SELECT
+            (short_window.avg_bps - long_window.avg_bps) / long_window.stddev_bps AS z_score
+        FROM short_window, long_window
+    )
+    SELECT
+        (
+            (sensitivity = 'high' AND result.z_score >= 4) OR
+            (sensitivity = 'medium' AND result.z_score >= 3) OR
+            (sensitivity = 'low' AND result.z_score >= 2)
+        )
+    FROM result
+);
+
+CREATE FUNCTION IF NOT EXISTS fireDynamicPpsThresholdAlert AS (ip_prefix, sensitivity, `datetime`) ->
+(
+    WITH short_window AS (
+        SELECT
+            avg(total_packets / 60) AS avg_pps
+        FROM prefix_flows_1m FINAL
+        WHERE
+            prefix = ip_prefix AND
+            time_flow_start >= `datetime` - INTERVAL 5 MINUTE AND
+            time_flow_start <= `datetime`
+    ),
+    long_window AS (
+        SELECT
+            stddevPopStable(total_packets / 60) AS stddev_pps,
+            avg(total_packets / 60) AS avg_pps
+        FROM prefix_flows_1m FINAL
+        WHERE
+            prefix = ip_prefix AND
+            time_flow_start >= `datetime` - INTERVAL 4 HOUR AND
+            time_flow_start <= `datetime`
+    ),
+    result AS (
+        SELECT
+            (short_window.avg_pps - long_window.avg_pps) / long_window.stddev_pps AS z_score
+        FROM short_window, long_window
+    )
+    SELECT
+        (
+            (sensitivity = 'high' AND result.z_score >= 4) OR
+            (sensitivity = 'medium' AND result.z_score >= 3) OR
+            (sensitivity = 'low' AND result.z_score >= 2)
+        )
+    FROM result
+);
