@@ -382,6 +382,11 @@ CREATE FUNCTION IF NOT EXISTS fireStaticPpsThresholdAlert AS (ip_prefix, thresho
 -- the formula for calculating the dynamic threshold is based on:
 -- https://developers.cloudflare.com/magic-network-monitoring/rules/dynamic-threshold/#how-the-dynamic-rule-threshold-is-calculated
 
+-- sensitivity levels:
+-- high: z-score >= 4
+-- medium: z-score >= 3
+-- low: z-score >= 2
+
 CREATE FUNCTION IF NOT EXISTS fireDynamicBpsThresholdAlert AS (ip_prefix, sensitivity, `datetime`) ->
 (
     WITH short_window AS (
