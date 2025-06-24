@@ -65,6 +65,21 @@ CREATE TABLE IF NOT EXISTS prefixes (
 ENGINE = ReplacingMergeTree()
 PRIMARY KEY prefix;
 
+CREATE TABLE IF NOT EXISTS rules
+(
+    id LowCardinality(String),
+    name LowCardinality(String),
+    prefixes Array(LowCardinality(String)),
+    type Enum('threshold', 'zscore'),
+    bandwidth_threshold UInt64,
+    packet_threshold UInt64,
+    duration IntervalMinute,
+    zscore_sensitivity Enum('low', 'medium', 'high'),
+    zscore_target Enum('bits', 'packets')
+)
+ENGINE = ReplacingMergeTree()
+PRIMARY KEY id;
+
 CREATE DATABASE IF NOT EXISTS dictionaries;
 
 CREATE DICTIONARY IF NOT EXISTS dictionaries.protocols (
