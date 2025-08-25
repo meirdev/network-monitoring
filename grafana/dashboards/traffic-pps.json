@@ -67,7 +67,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -400,7 +400,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -1365,14 +1365,9 @@
             "selected": false,
             "text": "TCP Flags",
             "value": "tcp_flags_string"
-          },
-          {
-            "selected": false,
-            "text": "Network Address",
-            "value": "network"
           }
         ],
-        "query": "Source IP : src_addr, Source Port : src_port, Destination IP : dst_addr, Destination Port : dst_port, Router Address : sampler_address, Protocol : proto_string, TCP Flags : tcp_flags_string, Network Address : network",
+        "query": "Source IP : src_addr, Source Port : src_port, Destination IP : dst_addr, Destination Port : dst_port, Router Address : sampler_address, Protocol : proto_string, TCP Flags : tcp_flags_string",
         "type": "custom"
       },
       {
