@@ -20,7 +20,7 @@ services:
     restart: always
 
   grafana:
-    image: grafana/grafana:12.0.0
+    image: grafana/grafana:12.1.1
     environment:
       - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource,grafana-clickhouse-datasource
     ports:
@@ -58,7 +58,7 @@ services:
       - kafka
 
   db:
-    image: clickhouse/clickhouse-server:25.4.2.31
+    image: clickhouse/clickhouse-server:25.7.4.11
     environment:
       - CLICKHOUSE_PASSWORD=password
     ports:
