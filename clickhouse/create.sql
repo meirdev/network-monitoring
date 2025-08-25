@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS flows_sink
     src_as UInt32,
     dst_as UInt32,
 
-    src_net UInt32.
+    src_net UInt32,
     dst_net UInt32,
 
     next_hop FixedString(16),
