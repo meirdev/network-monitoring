@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS flows
+CREATE TABLE IF NOT EXISTS flows_sink
 (
     type Int32,
 
@@ -21,14 +21,22 @@ CREATE TABLE IF NOT EXISTS flows
 
     tcp_flags UInt32,
 
+    icmp_type UInt32,
+    icmp_code UInt32,
+
     src_port UInt32,
     dst_port UInt32,
 
     src_as UInt32,
     dst_as UInt32,
 
+    src_net UInt32.
+    dst_net UInt32,
+
     next_hop FixedString(16),
     next_hop_as UInt32,
+
+    bgp_next_hop FixedString(16),
 
     in_if UInt32,
     out_if UInt32,
@@ -289,7 +297,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows_raw_mv TO flows_raw AS
 
             observation_domain_id,
             observation_point_id
-        FROM flows
+        FROM flows_sink
     )
     SELECT
         type,
