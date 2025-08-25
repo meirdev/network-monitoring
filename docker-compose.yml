@@ -22,7 +22,7 @@ services:
   grafana:
     image: grafana/grafana:12.1.1
     environment:
-      - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource 3.4.0,grafana-clickhouse-datasource
+      - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource 3.3.1,grafana-clickhouse-datasource
     ports:
       - "3000:3000"
     restart: always
