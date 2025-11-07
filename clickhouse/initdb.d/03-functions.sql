@@ -21,7 +21,7 @@ CREATE FUNCTION IF NOT EXISTS NumToTcpFlagsString AS (tcp_flags) ->
 
 CREATE FUNCTION IF NOT EXISTS NumToForwardingStatusString AS (forwarding_status) ->
 (
-    transform(forwarding_status, [0, 1, 2, 3], ['UNKNOWN', 'FORWARDED', 'DROPPED', 'CONSUMED'], toString(forwarding_status))
+    transform(if(forwarding_status >= 64, bitShiftRight(forwarding_status, 7), forwarding_status), [0, 1, 2, 3], ['UNKNOWN', 'FORWARDED', 'DROPPED', 'CONSUMED'], toString(forwarding_status))
 );
 
 CREATE FUNCTION IF NOT EXISTS IPStringToNum AS (ip) ->
