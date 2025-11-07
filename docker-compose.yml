@@ -20,20 +20,22 @@ services:
     restart: always
 
   grafana:
-    image: grafana/grafana:12.1.1
+    image: grafana/grafana:12.2
+    container_name: network-monitoring-grafana
     environment:
-      - GF_INSTALL_PLUGINS=vertamedia-clickhouse-datasource 3.3.1,grafana-clickhouse-datasource
+      GF_INSTALL_PLUGINS: vertamedia-clickhouse-datasource 3.3.1,grafana-clickhouse-datasource
     ports:
       - "3000:3000"
     restart: always
     volumes:
-      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
-      - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
       - grafana:/var/lib/grafana
 
   prometheus:
     image: prom/prometheus:v3.4.0
+    container_name: network-monitoring-prometheus
     ports:
       - "9090:9090"
     restart: always
@@ -43,6 +45,7 @@ services:
 
   goflow2:
     image: netsampler/goflow2:latest
+    container_name: network-monitoring-goflow2
     ports:
       - "8080:8080"
       - "6343:6343/udp"
@@ -52,24 +55,25 @@ services:
       - -transport.kafka.brokers=kafka:9093
       - -transport=kafka
       - -transport.kafka.topic=flows
-      - -transport.kafka.version=4.0.0
+      - -transport.kafka.version=4.1.0
       - -format=bin
     depends_on:
       - kafka
 
   db:
-    image: clickhouse/clickhouse-server:25.7.4.11
+    image: clickhouse/clickhouse-server:25.10
+    container_name: network-monitoring-clickhouse
     environment:
-      - CLICKHOUSE_PASSWORD=password
+      CLICKHOUSE_PASSWORD: password
     ports:
       - "8123:8123"
       - "9000:9000"
       - "9363:9363"
     volumes:
-      - ./clickhouse/create.sql:/docker-entrypoint-initdb.d/create.sql
-      - ./clickhouse/flow.proto:/var/lib/clickhouse/format_schemas/flow.proto
-      - ./clickhouse/protocols.csv:/var/lib/clickhouse/user_files/protocols.csv
-      - ./clickhouse/config.xml:/etc/clickhouse-server/config.d/config.xml
+      - ./clickhouse/initdb.d:/docker-entrypoint-initdb.d
+      - ./clickhouse/format_schemas:/var/lib/clickhouse/format_schemas
+      - ./clickhouse/user_files:/var/lib/clickhouse/user_files
+      - ./clickhouse/config.d:/etc/clickhouse-server/config.d
       - clickhouse:/var/lib/clickhouse
     depends_on:
       - kafka
@@ -77,6 +81,7 @@ services:
   # Use vector.dev to read messages from Kafka
   # vector:
   #   image: timberio/vector:0.46.1-debian
+  #   container_name: network-monitoring-vector
   #   restart: always
   #   ports:
   #     - "8686:8686"
@@ -87,10 +92,10 @@ services:
   #   depends_on:
   #     - goflow2
 
-  # nflow-generator:
-  #   image: networkstatic/nflow-generator
-  #   restart: always
-  #   command: -p 2055 -t goflow2
+  nflow-generator:
+    image: networkstatic/nflow-generator
+    restart: always
+    command: -p 2055 -t goflow2
 
 volumes:
   clickhouse:
