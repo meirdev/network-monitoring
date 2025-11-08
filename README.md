@@ -27,6 +27,10 @@ Clone the repository and use `docker compose` to start the services:
 docker compose up -d
 ```
 
+Username and password for ClickHouse: `default:password`.
+
+Username and password for Grafana: `admin:admin`.
+
 ## Routers
 
 Some routers do not provide `sampling_rate` in their flow data, which is required to understand what the "real" traffic is. In this case, you can enter the router's IP address and sample rate into the `flows.routers` table:
@@ -111,4 +115,21 @@ Example Usage:
 
 ```sql
 SELECT fireDynamicBpsThresholdAlert('10.0.0.0/24', 'medium', now());
+```
+
+### Alerting
+
+You can use the above functions in your alerting system. For example, you can create a cron job that runs every minute to check for alerts and send notifications if any are triggered. Example script:
+
+```bash
+#!/bin/bash
+
+# Returns 1 if the bps rate on 10.0.0.0/16 exceeds 10 Mbps in the last 2 minutes, otherwise returns 0.
+QUERY_RESULT=$(clickhouse-client --password password --query "SELECT fireStaticBpsThresholdAlert('10.0.0.0/16', 10000000, INTERVAL 2 MINUTE, now())")
+
+if [[ "$QUERY_RESULT" == "1" ]]; then
+    echo "Alert: Traffic exceeded threshold!"
+else
+    echo "No alert triggered."
+fi
 ```

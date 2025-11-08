@@ -46,33 +46,35 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_total_1m_mv TO flows.prefi
 
 CREATE FUNCTION IF NOT EXISTS fireStaticBpsThresholdAlert AS (ip_prefix, threshold, duration, `datetime`) ->
 (
-    WITH result AS (
+    WITH toDateTime(`datetime`) AS datetime_rounded,
+    result AS (
         SELECT
             bytes * 8 / 60 AS bps,
             bps >= threshold AS is_exceeded
         FROM flows.prefixes_total_1m FINAL
         WHERE
             prefix = ip_prefix AND
-            time_received >= `datetime` - duration AND
-            time_received <= `datetime`
+            time_received >= datetime_rounded - duration AND
+            time_received <= datetime_rounded
     )
-    SELECT countIf(is_exceeded = true) = date_diff('minute', `datetime` - duration, `datetime`) FROM result
+    SELECT countIf(is_exceeded = true) = date_diff('minute', datetime_rounded - duration, datetime_rounded) FROM result
 );
 
 
 CREATE FUNCTION IF NOT EXISTS fireStaticPpsThresholdAlert AS (ip_prefix, threshold, duration, `datetime`) ->
 (
-    WITH result AS (
+    WITH toDateTime(`datetime`) AS datetime_rounded,
+    result AS (
         SELECT
             packets / 60 AS pps,
             pps >= threshold AS is_exceeded
         FROM flows.prefixes_total_1m FINAL
         WHERE
             prefix = ip_prefix AND
-            time_received >= `datetime` - duration AND
-            time_received <= `datetime`
+            time_received >= datetime_rounded - duration AND
+            time_received <= datetime_rounded
     )
-    SELECT countIf(is_exceeded = true) = date_diff('minute', `datetime` - duration, `datetime`) FROM result
+    SELECT countIf(is_exceeded = true) = date_diff('minute', datetime_rounded - duration, datetime_rounded) FROM result
 );
 
 
@@ -87,14 +89,15 @@ CREATE FUNCTION IF NOT EXISTS fireStaticPpsThresholdAlert AS (ip_prefix, thresho
 
 CREATE FUNCTION IF NOT EXISTS fireDynamicBpsThresholdAlert AS (ip_prefix, sensitivity, `datetime`) ->
 (
-    WITH short_window AS (
+    WITH toDateTime(`datetime`) AS datetime_rounded,
+    short_window AS (
         SELECT
             avg(bytes * 8 / 60) AS avg_bps
         FROM flows.prefixes_total_1m FINAL
         WHERE
             prefix = ip_prefix AND
-            time_received >= `datetime` - INTERVAL 5 MINUTE AND
-            time_received <= `datetime`
+            time_received >= datetime_rounded - INTERVAL 5 MINUTE AND
+            time_received <= datetime_rounded
     ),
     long_window AS (
         SELECT
@@ -103,8 +106,8 @@ CREATE FUNCTION IF NOT EXISTS fireDynamicBpsThresholdAlert AS (ip_prefix, sensit
         FROM flows.prefixes_total_1m FINAL
         WHERE
             prefix = ip_prefix AND
-            time_received >= `datetime` - INTERVAL 4 HOUR AND
-            time_received <= `datetime`
+            time_received >= datetime_rounded - INTERVAL 4 HOUR AND
+            time_received <= datetime_rounded
     ),
     result AS (
         SELECT
@@ -123,14 +126,15 @@ CREATE FUNCTION IF NOT EXISTS fireDynamicBpsThresholdAlert AS (ip_prefix, sensit
 
 CREATE FUNCTION IF NOT EXISTS fireDynamicPpsThresholdAlert AS (ip_prefix, sensitivity, `datetime`) ->
 (
-    WITH short_window AS (
+    WITH toDateTime(`datetime`) AS datetime_rounded,
+    short_window AS (
         SELECT
             avg(packets / 60) AS avg_pps
         FROM flows.prefixes_total_1m FINAL
         WHERE
             prefix = ip_prefix AND
-            time_received >= `datetime` - INTERVAL 5 MINUTE AND
-            time_received <= `datetime`
+            time_received >= datetime_rounded - INTERVAL 5 MINUTE AND
+            time_received <= datetime_rounded
     ),
     long_window AS (
         SELECT
@@ -139,8 +143,8 @@ CREATE FUNCTION IF NOT EXISTS fireDynamicPpsThresholdAlert AS (ip_prefix, sensit
         FROM flows.prefixes_total_1m FINAL
         WHERE
             prefix = ip_prefix AND
-            time_received >= `datetime` - INTERVAL 4 HOUR AND
-            time_received <= `datetime`
+            time_received >= datetime_rounded - INTERVAL 4 HOUR AND
+            time_received <= datetime_rounded
     ),
     result AS (
         SELECT
