@@ -137,12 +137,7 @@
       "interval": "1m",
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "p95",
-            "max",
-            "lastNotNull"
-          ],
+          "calcs": ["mean", "p95", "max", "lastNotNull"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -235,9 +230,7 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -330,9 +323,7 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": true
         },
@@ -375,12 +366,7 @@
           "id": "reduce",
           "options": {
             "labelsToFields": false,
-            "reducers": [
-              "mean",
-              "p95",
-              "max",
-              "lastNotNull"
-            ]
+            "reducers": ["mean", "p95", "max", "lastNotNull"]
           }
         },
         {
@@ -478,12 +464,7 @@
       "interval": "1m",
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "p95",
-            "max",
-            "lastNotNull"
-          ],
+          "calcs": ["mean", "p95", "max", "lastNotNull"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -583,9 +564,7 @@
         "orientation": "vertical",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": true
         },
@@ -1160,9 +1139,7 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": true
         },
