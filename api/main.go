@@ -37,7 +37,7 @@ func GetTop(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "column parameter is required"})
 		return
 	}
-	if slices.Contains(columns, column) == false {
+	if !slices.Contains(columns, column) {
 		c.JSON(400, gin.H{"error": "invalid column parameter"})
 		return
 	}
@@ -53,7 +53,7 @@ func GetTop(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "agg parameter is required"})
 		return
 	}
-	if slices.Contains(aggs, agg) == false {
+	if !slices.Contains(aggs, agg) {
 		c.JSON(400, gin.H{"error": "invalid agg parameter"})
 		return
 	}
@@ -70,7 +70,7 @@ func GetTop(c *gin.Context) {
 		query = `
 		WITH top AS (
 			SELECT {column:Identifier} AS column, sum({agg:Identifier}) AS agg
-			FROM flows_raw
+			FROM flows.raw
 			GROUP BY column
 			ORDER BY agg DESC
 		)
@@ -81,7 +81,7 @@ func GetTop(c *gin.Context) {
 		query = `
 		WITH top_k AS (
 			SELECT arrayJoin(approx_top_sum({k:UInt32})({column:Identifier}, {agg:Identifier})) AS i
-			FROM flows_raw
+			FROM flows.raw
 		)
 		SELECT toString(i.1) AS column, i.2 AS agg
 		FROM top_k
@@ -123,7 +123,7 @@ func main() {
 	conn, err = clickhouse.Open(&clickhouse.Options{
 		Addr: []string{"localhost:9000"},
 		Auth: clickhouse.Auth{
-			Database: "default",
+			Database: "flows",
 			Username: "default",
 			Password: "password",
 		},

@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 5,
+  "id": 4,
   "links": [],
   "panels": [
     {
@@ -68,6 +68,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -82,7 +83,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -92,7 +94,38 @@
           },
           "unit": "bps"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "total - DROPPED"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "total - UNKNOWN"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -104,17 +137,10 @@
       "interval": "1m",
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "p85",
-            "max",
-            "lastNotNull"
-          ],
+          "calcs": ["mean", "p95", "max", "lastNotNull"],
           "displayMode": "table",
           "placement": "bottom",
-          "showLegend": false,
-          "sortBy": "Mean",
-          "sortDesc": true
+          "showLegend": true
         },
         "tooltip": {
           "hideZeros": false,
@@ -122,19 +148,25 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
-          "adHocFilters": [],
+          "adHocFilters": [
+            {
+              "key": "src_addr",
+              "operator": "=",
+              "value": "172.30.20.102"
+            }
+          ],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -142,13 +174,13 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "SELECT $timeSeries as t, floor(sum(bytes) * 8 / $interval) AS bps FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
-          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nSELECT (intDiv(toFloat64(time_flow_start) * 1000, (60 * 1000)) * (60 * 1000)) as t, floor(sum(bytes) * 8 / 60) AS bps FROM default.flows_raw WHERE time_flow_start >= toDateTime64(1747809980,3) AND time_flow_start <= toDateTime64(1747813580,3) GROUP BY t ORDER BY t",
-          "refId": "A",
+          "query": "SELECT $timeSeries as t, forwarding_status, floor(sum(bytes) * 8 / $interval) AS bps FROM $table WHERE $timeFilter GROUP BY t, forwarding_status ORDER BY t",
+          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nSELECT (intDiv(toFloat64(time_received) * 1000, (60 * 1000)) * (60 * 1000)) as t, forwarding_status, floor(sum(bytes) * 8 / 60) AS bps FROM flows.grafana WHERE time_received >= toDateTime64(1762504331,3) AND time_received <= toDateTime64(1762507931,3) GROUP BY t, forwarding_status ORDER BY t",
+          "refId": "total",
           "round": "0s",
-          "showFormattedSQL": true,
+          "showFormattedSQL": false,
           "skip_comments": true,
-          "table": "flows_raw",
+          "table": "grafana",
           "useWindowFuncForMacros": true
         }
       ],
@@ -171,7 +203,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -197,9 +230,7 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -207,19 +238,19 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "adHocFilters": [],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -228,11 +259,11 @@
           "interval": "",
           "intervalFactor": 1,
           "query": "SELECT sum(bytes) AS bytes FROM $table WHERE $timeFilter",
-          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nSELECT sum(bytes) AS bytes FROM default.flows_raw WHERE time_flow_start >= toDateTime64(1747765263,3) AND time_flow_start <= toDateTime64(1747776647,3)",
+          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nSELECT sum(bytes) AS bytes FROM flows.grafana WHERE time_received >= toDateTime64(1762504331,3) AND time_received <= toDateTime64(1762507931,3)",
           "refId": "A",
           "round": "0s",
           "skip_comments": true,
-          "table": "flows_raw",
+          "table": "grafana",
           "useWindowFuncForMacros": true
         }
       ],
@@ -264,7 +295,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -291,9 +323,7 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": true
         },
@@ -301,19 +331,19 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "adHocFilters": [],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -322,11 +352,11 @@
           "interval": "1m",
           "intervalFactor": 1,
           "query": "SELECT $timeSeries as t, floor(sum(bytes) * 8 / $interval) AS bps FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
-          "rawQuery": " /* grafana dashboard=Traffic / Mbps, user=1 */\n\nSELECT\n    (intDiv(toFloat64(time_flow_start) * 1000, (60 * 1000)) * (60 * 1000)) as t,\n    floor(sum(bytes) * 8 / 60) AS bps\nFROM default.flows_raw\n\nWHERE\n    time_flow_start >= toDateTime64(1747765263,3) AND time_flow_start <= toDateTime64(1747776647,3)\n    AND src_port = 80\nGROUP BY t\n\nORDER BY t\n",
+          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nSELECT (intDiv(toFloat64(time_flow_start) * 1000, (60 * 1000)) * (60 * 1000)) as t, floor(sum(bytes) * 8 / 60) AS bps FROM flows.grafana WHERE time_flow_start >= toDateTime64(1762503769,3) AND time_flow_start <= toDateTime64(1762507369,3) GROUP BY t ORDER BY t",
           "refId": "A",
           "round": "0s",
           "skip_comments": true,
-          "table": "flows_raw",
+          "table": "grafana",
           "useWindowFuncForMacros": true
         }
       ],
@@ -336,12 +366,7 @@
           "id": "reduce",
           "options": {
             "labelsToFields": false,
-            "reducers": [
-              "mean",
-              "p95",
-              "max",
-              "lastNotNull"
-            ]
+            "reducers": ["mean", "p95", "max", "lastNotNull"]
           }
         },
         {
@@ -401,6 +426,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -415,7 +441,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -437,17 +464,10 @@
       "interval": "1m",
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "p95",
-            "max",
-            "lastNotNull"
-          ],
+          "calcs": ["mean", "p95", "max", "lastNotNull"],
           "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true,
-          "sortBy": "Mean",
-          "sortDesc": true
+          "showLegend": true
         },
         "tooltip": {
           "hideZeros": false,
@@ -455,33 +475,34 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "adHocFilters": [],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
           "format": "time_series",
-          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "formattedQuery": "/* grafana dashboard='Traffic / Mbps', user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(5)(COLUMNS('dst_addr'), bytes)) AS i FROM flows.grafana WHERE time_received >= toDateTime64(1762503591,3) AND time_received <= toDateTime64(1762507191,3) AND 1)\r\nSELECT (intDiv(toFloat64(time_received) * 1000, (60 * 1000)) * (60 * 1000)) as t, COLUMNS('dst_addr'), floor(sum(bytes) * 8 / 60) AS bps FROM flows.grafana WHERE time_received >= toDateTime64(1762503591,3) AND time_received <= toDateTime64(1762507191,3) AND 1 AND COLUMNS('dst_addr') IN (SELECT i.1 FROM top_k) GROUP BY COLUMNS('dst_addr'), t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
+          "nullifySparse": true,
           "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(5)(${column}, bytes)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT $timeSeries as t, ${column}, floor(sum(bytes) * 8 / $interval) AS bps FROM $table WHERE $timeFilter AND $adhoc AND ${column} IN (SELECT i.1 FROM top_k) GROUP BY ${column}, t ORDER BY t",
-          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nWITH top_column AS (\r\n  SELECT src_port AS col, sum(bytes) AS bytes FROM default.flows_raw WHERE time_flow_start >= toDateTime64(1747822909,3) AND time_flow_start <= toDateTime64(1747826509,3) AND 1 GROUP BY src_port ORDER BY bytes DESC LIMIT 5\r\n)\r\nSELECT (intDiv(toFloat64(time_flow_start) * 1000, (60 * 1000)) * (60 * 1000)) as t, src_port, floor(sum(bytes) * 8 / 60) AS bps FROM default.flows_raw JOIN top_column ON top_column.col = src_port WHERE time_flow_start >= toDateTime64(1747822909,3) AND time_flow_start <= toDateTime64(1747826509,3) GROUP BY src_port, t ORDER BY t",
+          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(5)(src_addr, bytes)) AS i FROM flows.grafana WHERE time_received >= toDateTime64(1762504331,3) AND time_received <= toDateTime64(1762507931,3) AND 1)\r\nSELECT (intDiv(toFloat64(time_received) * 1000, (2 * 1000)) * (2 * 1000)) as t, src_addr, floor(sum(bytes) * 8 / 2) AS bps FROM flows.grafana WHERE time_received >= toDateTime64(1762504331,3) AND time_received <= toDateTime64(1762507931,3) AND 1 AND src_addr IN (SELECT i.1 FROM top_k) GROUP BY src_addr, t ORDER BY t",
           "refId": "A",
           "round": "0s",
           "showFormattedSQL": true,
           "skip_comments": true,
-          "table": "flows_raw",
+          "table": "grafana",
           "useWindowFuncForMacros": true
         }
       ],
@@ -516,7 +537,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -542,9 +564,7 @@
         "orientation": "vertical",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": true
         },
@@ -552,19 +572,19 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "adHocFilters": [],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -572,13 +592,13 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "SELECT proto_string, sum(bytes) AS bytes FROM $table WHERE $timeFilter GROUP BY proto_string HAVING bytes > 0 ORDER BY bytes DESC",
-          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nSELECT proto_string, sum(bytes) AS bytes FROM default.flows_raw WHERE time_flow_start >= toDateTime64(1747818907,3) AND time_flow_start <= toDateTime64(1747822507,3) GROUP BY proto_string HAVING bytes >  ORDER BY bytes DESC",
+          "query": "SELECT proto, sum(bytes) AS bytes FROM $table WHERE $timeFilter GROUP BY proto HAVING bytes > 0 ORDER BY bytes DESC",
+          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nSELECT proto, sum(bytes) AS bytes FROM flows.grafana WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) GROUP BY proto HAVING bytes > 0 ORDER BY bytes DESC",
           "refId": "A",
           "round": "0s",
           "showFormattedSQL": true,
           "skip_comments": true,
-          "table": "flows_raw",
+          "table": "grafana",
           "useWindowFuncForMacros": true
         }
       ],
@@ -613,6 +633,9 @@
             "cellOptions": {
               "type": "auto"
             },
+            "footer": {
+              "reducers": []
+            },
             "inspect": false
           },
           "mappings": [],
@@ -620,7 +643,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -651,10 +675,6 @@
               {
                 "id": "filterable",
                 "value": true
-              },
-              {
-                "id": "displayName",
-                "value": "Source IP"
               }
             ]
           }
@@ -669,29 +689,21 @@
       "id": 6,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "adHocFilters": [],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -700,12 +712,12 @@
           "interval": "",
           "intervalFactor": 1,
           "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_addr, bytes)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS src_addr, i.2 AS bytes FROM top_k",
-          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_addr, bytes)) AS i FROM default.flows_raw WHERE time_flow_start >= toDateTime64(1747822909,3) AND time_flow_start <= toDateTime64(1747826509,3) AND 1)\r\nSELECT i.1 AS src_addr, i.2 AS bytes FROM top_k",
+          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_addr, bytes)) AS i FROM flows.grafana WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) AND 1)\r\nSELECT i.1 AS src_addr, i.2 AS bytes FROM top_k",
           "refId": "A",
           "round": "0s",
           "showFormattedSQL": true,
           "skip_comments": true,
-          "table": "flows_raw",
+          "table": "grafana",
           "useWindowFuncForMacros": true
         }
       ],
@@ -727,6 +739,9 @@
             "cellOptions": {
               "type": "auto"
             },
+            "footer": {
+              "reducers": []
+            },
             "inspect": false
           },
           "mappings": [],
@@ -734,7 +749,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -765,10 +781,6 @@
               {
                 "id": "filterable",
                 "value": true
-              },
-              {
-                "id": "displayName",
-                "value": "Source Port"
               }
             ]
           }
@@ -783,29 +795,21 @@
       "id": 12,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "adHocFilters": [],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -814,11 +818,11 @@
           "interval": "",
           "intervalFactor": 1,
           "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_port, bytes)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS src_port, i.2 AS bytes FROM top_k",
-          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_port, bytes)) AS i FROM default.flows_raw WHERE time_flow_start >= toDateTime64(1747808067,3) AND time_flow_start <= toDateTime64(1747811667,3) AND 1)\r\nSELECT i.1 AS dst_port, i.2 AS bytes FROM top_k",
+          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_port, bytes)) AS i FROM flows.grafana WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) AND 1)\r\nSELECT i.1 AS src_port, i.2 AS bytes FROM top_k",
           "refId": "A",
           "round": "0s",
           "skip_comments": true,
-          "table": "flows_raw",
+          "table": "grafana",
           "useWindowFuncForMacros": true
         }
       ],
@@ -867,6 +871,9 @@
             "cellOptions": {
               "type": "auto"
             },
+            "footer": {
+              "reducers": []
+            },
             "inspect": false
           },
           "mappings": [],
@@ -874,7 +881,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -905,10 +913,6 @@
               {
                 "id": "filterable",
                 "value": true
-              },
-              {
-                "id": "displayName",
-                "value": "Destination IP"
               }
             ]
           }
@@ -923,29 +927,21 @@
       "id": 11,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "adHocFilters": [],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -954,12 +950,12 @@
           "interval": "",
           "intervalFactor": 1,
           "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_addr, bytes)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS dst_addr, i.2 AS bytes FROM top_k",
-          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_addr, bytes)) AS i FROM default.flows_raw WHERE time_flow_start >= toDateTime64(1747808067,3) AND time_flow_start <= toDateTime64(1747811667,3) AND 1)\r\nSELECT i.1 AS dst_addr, i.2 AS bytes FROM top_k",
+          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_addr, bytes)) AS i FROM flows.grafana WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) AND 1)\r\nSELECT i.1 AS dst_addr, i.2 AS bytes FROM top_k",
           "refId": "A",
           "round": "0s",
           "showFormattedSQL": true,
           "skip_comments": true,
-          "table": "flows_raw",
+          "table": "grafana",
           "useWindowFuncForMacros": true
         }
       ],
@@ -981,6 +977,9 @@
             "cellOptions": {
               "type": "auto"
             },
+            "footer": {
+              "reducers": []
+            },
             "inspect": false
           },
           "mappings": [],
@@ -988,7 +987,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1021,8 +1021,7 @@
                 "value": true
               },
               {
-                "id": "displayName",
-                "value": "Destination Port"
+                "id": "displayName"
               }
             ]
           }
@@ -1037,29 +1036,21 @@
       "id": 7,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
         "showHeader": true
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "adHocFilters": [],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -1068,11 +1059,11 @@
           "interval": "",
           "intervalFactor": 1,
           "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_port, bytes)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS dst_port, i.2 AS bytes FROM top_k",
-          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_port, bytes)) AS i FROM default.flows_raw WHERE time_flow_start >= toDateTime64(1747807926,3) AND time_flow_start <= toDateTime64(1747811526,3) AND 1)\r\nSELECT i.1 AS dst_addr, i.2 AS bytes FROM top_k",
+          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_port, bytes)) AS i FROM flows.grafana WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) AND 1)\r\nSELECT i.1 AS dst_port, i.2 AS bytes FROM top_k",
           "refId": "A",
           "round": "0s",
           "skip_comments": true,
-          "table": "flows_raw",
+          "table": "grafana",
           "useWindowFuncForMacros": true
         }
       ],
@@ -1121,7 +1112,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1147,9 +1139,7 @@
         "orientation": "auto",
         "percentChangeColorMode": "standard",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": true
         },
@@ -1157,19 +1147,19 @@
         "textMode": "value_and_name",
         "wideLayout": false
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "adHocFilters": [],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -1177,12 +1167,12 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "SELECT tcp_flags_string, sum(bytes) AS bytes FROM $table WHERE $timeFilter GROUP BY tcp_flags_string HAVING bytes > 0 ORDER BY bytes DESC",
-          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nSELECT tcp_flags_string, sum(bytes) AS bytes FROM default.flows_raw WHERE time_flow_start >= toDateTime64(1747822579,3) AND time_flow_start <= toDateTime64(1747826179,3) GROUP BY tcp_flags_string HAVING bytes > 0 ORDER BY bytes DESC",
+          "query": "SELECT tcp_flags, sum(bytes) AS bytes FROM $table WHERE $timeFilter GROUP BY tcp_flags HAVING bytes > 0 ORDER BY bytes DESC",
+          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nSELECT tcp_flags, sum(bytes) AS bytes FROM flows.grafana WHERE time_received >= toDateTime64(1762501837,3) AND time_received <= toDateTime64(1762505437,3) GROUP BY tcp_flags HAVING bytes > 0 ORDER BY bytes DESC",
           "refId": "A",
           "round": "0s",
           "skip_comments": true,
-          "table": "flows_raw",
+          "table": "grafana",
           "useWindowFuncForMacros": true
         }
       ],
@@ -1217,6 +1207,9 @@
             "cellOptions": {
               "type": "auto"
             },
+            "footer": {
+              "reducers": []
+            },
             "inspect": false
           },
           "mappings": [],
@@ -1224,7 +1217,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -1255,10 +1249,6 @@
               {
                 "id": "filterable",
                 "value": true
-              },
-              {
-                "id": "displayName",
-                "value": "Router Address"
               }
             ]
           }
@@ -1273,29 +1263,22 @@
       "id": 2,
       "options": {
         "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": []
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "adHocFilters": [],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -1304,11 +1287,11 @@
           "interval": "",
           "intervalFactor": 1,
           "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(sampler_address, bytes)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS sampler_address, i.2 AS bytes FROM top_k",
-          "rawQuery": "/* grafana dashboard=Traffic / Mbps, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(sampler_address, bytes)) AS i FROM default.flows_raw WHERE time_flow_start >= toDateTime64(1747808067,3) AND time_flow_start <= toDateTime64(1747811667,3) AND 1)\r\nSELECT i.1 AS src_addr, i.2 AS bytes FROM top_k",
+          "rawQuery": " /* grafana dashboard=Traffic / Mbps, user=1 */\n\nWITH top_k AS(SELECT arrayJoin(approx_top_sum(10)(sampler_address, bytes)) AS i FROM flows.grafana WHERE time_received >= toDateTime64(1762501837,3) AND time_received <= toDateTime64(1762505437,3) AND (sampler_address = '10.201.1.2'))\nSELECT\n    i .1 AS sampler_address,\n    i .2 AS bytes\nFROM top_k\n",
           "refId": "A",
           "round": "0s",
           "skip_comments": true,
-          "table": "flows_raw",
+          "table": "grafana",
           "useWindowFuncForMacros": true
         }
       ],
@@ -1317,7 +1300,7 @@
     }
   ],
   "preload": false,
-  "schemaVersion": 41,
+  "schemaVersion": 42,
   "tags": [],
   "templating": {
     "list": [
@@ -1367,7 +1350,7 @@
             "value": "tcp_flags_string"
           }
         ],
-        "query": "Source IP : src_addr, Source Port : src_port, Destination IP : dst_addr, Destination Port : dst_port, Router Address : sampler_address, Protocol : proto_string, TCP Flags : tcp_flags_string",
+        "query": "Source IP : src_addr, Source Port : src_port, Destination IP : dst_addr, Destination Port : dst_port, Router Address : sampler_address, Protocol : proto, TCP Flags : tcp_flags",
         "type": "custom"
       },
       {
@@ -1379,6 +1362,18 @@
         "filters": [],
         "name": "Filters",
         "type": "adhoc"
+      },
+      {
+        "current": {
+          "text": "SELECT database, table, name, type FROM system.columns WHERE table='flows_raw' ORDER BY database, table",
+          "value": "SELECT database, table, name, type FROM system.columns WHERE table='flows_raw' ORDER BY database, table"
+        },
+        "description": "",
+        "hide": 2,
+        "name": "adhoc_query_filter",
+        "query": "SELECT database, table, name, type FROM system.columns WHERE table='flows_raw' ORDER BY database, table",
+        "skipUrlSync": true,
+        "type": "constant"
       }
     ]
   },
@@ -1390,5 +1385,5 @@
   "timezone": "browser",
   "title": "Traffic / Mbps",
   "uid": "03bbb83f-4022-435d-9305-a2f5bcee2c3b",
-  "version": 2
+  "version": 3
 }

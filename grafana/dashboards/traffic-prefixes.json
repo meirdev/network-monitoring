@@ -69,6 +69,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -83,7 +84,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -97,7 +99,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
+        "w": 12,
         "x": 0,
         "y": 1
       },
@@ -116,19 +118,19 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "adHocFilters": [],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME",
           "editorMode": "sql",
           "extrapolate": true,
@@ -136,13 +138,13 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "SELECT $timeSeries as t, floor(sum(total_bytes) * 8 / $interval) AS bps FROM $table WHERE $timeFilter AND prefix = $prefixes GROUP BY t ORDER BY t",
-          "rawQuery": "/* grafana dashboard=New dashboard, user=1 */\nSELECT (intDiv(toUInt32(time_flow_start), 60) * 60) * 1000 as t, floor(sum(total_bytes) * 8 / 60) AS bps FROM default.prefix_flows_1m WHERE time_flow_start >= toDateTime(1750552713) AND time_flow_start <= toDateTime(1750574313) AND prefix = '' GROUP BY t ORDER BY t",
+          "query": "SELECT $timeSeries as t, floor(sum(bytes) * 8 / $interval) AS bps FROM $table WHERE $timeFilter AND prefix = $prefixes GROUP BY t ORDER BY t",
+          "rawQuery": "/* grafana dashboard=Traffic Prefixes, user=1 */\nSELECT (intDiv(toUInt32(time_received), 60) * 60) * 1000 as t, floor(sum(total_bytes) * 8 / 60) AS bps FROM flows.prefixes_total_1m WHERE time_received >= toDateTime(1762621887) AND time_received <= toDateTime(1762636287) AND prefix = '10.12.0.0/16' GROUP BY t ORDER BY t",
           "refId": "A",
           "round": "0s",
           "showFormattedSQL": true,
           "skip_comments": true,
-          "table": "prefix_flows_1m",
+          "table": "prefixes_total_1m",
           "useWindowFuncForMacros": true
         }
       ],
@@ -184,6 +186,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -198,7 +201,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "red",
@@ -212,8 +216,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
+        "w": 12,
+        "x": 12,
         "y": 1
       },
       "id": 3,
@@ -231,19 +235,19 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.0.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "adHocFilters": [],
           "adHocValuesQuery": "",
           "add_metadata": true,
           "contextWindowSize": "10",
-          "database": "default",
+          "database": "flows",
           "datasource": {
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_flow_start",
+          "dateTimeColDataType": "time_received",
           "dateTimeType": "DATETIME",
           "editorMode": "sql",
           "extrapolate": true,
@@ -251,159 +255,42 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "SELECT $timeSeries as t, floor(sum(total_packets) / $interval) AS bps FROM $table WHERE $timeFilter AND prefix = $prefixes GROUP BY t ORDER BY t",
-          "rawQuery": "/* grafana dashboard=New dashboard, user=1 */\nSELECT (intDiv(toUInt32(time_flow_start), 60) * 60) * 1000 as t, floor(sum(total_packets)  / 60) AS bps FROM default.prefix_flows_1m WHERE time_flow_start >= toDateTime(1750552806) AND time_flow_start <= toDateTime(1750574406) AND prefix = '' GROUP BY t ORDER BY t",
+          "query": "SELECT $timeSeries as t, floor(sum(packets) / $interval) AS bps FROM $table WHERE $timeFilter AND prefix = $prefixes GROUP BY t ORDER BY t",
+          "rawQuery": "/* grafana dashboard=Traffic Prefixes, user=1 */\nSELECT (intDiv(toUInt32(time_flow_start), 60) * 60) * 1000 as t, floor(sum(packets) / 60) AS bps FROM flows.prefixes_total_1m WHERE time_flow_start >= toDateTime(1762621887) AND time_flow_start <= toDateTime(1762636287) AND prefix = '10.12.0.0/16' GROUP BY t ORDER BY t",
           "refId": "A",
           "round": "0s",
           "showFormattedSQL": true,
           "skip_comments": true,
-          "table": "prefix_flows_1m",
+          "table": "prefixes_total_1m",
           "useWindowFuncForMacros": true
         }
       ],
       "title": "PPS",
       "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "vertamedia-clickhouse-datasource",
-        "uid": "PDEE91DDB90597936"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "fixedColor": "green",
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "flows",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 59,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 1
-      },
-      "id": 4,
-      "interval": "1m",
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": false
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.0.0",
-      "targets": [
-        {
-          "adHocFilters": [],
-          "adHocValuesQuery": "",
-          "add_metadata": true,
-          "contextWindowSize": "10",
-          "database": "default",
-          "datasource": {
-            "type": "vertamedia-clickhouse-datasource",
-            "uid": "PDEE91DDB90597936"
-          },
-          "dateTimeColDataType": "time_flow_start",
-          "dateTimeType": "DATETIME",
-          "editorMode": "sql",
-          "extrapolate": true,
-          "format": "time_series",
-          "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
-          "interval": "",
-          "intervalFactor": 1,
-          "query": "SELECT $timeSeries as t, floor(sum(total_flows) / $interval) AS fps FROM $table WHERE $timeFilter AND prefix = $prefixes GROUP BY t ORDER BY t",
-          "rawQuery": "/* grafana dashboard=New dashboard, user=1 */\nSELECT (intDiv(toUInt32(time_flow_start), 60) * 60) * 1000 as t, floor(sum(total_flows) / 60) AS fps FROM default.prefix_flows_1m WHERE time_flow_start >= toDateTime(1750552806) AND time_flow_start <= toDateTime(1750574406) AND prefix = '' GROUP BY t ORDER BY t",
-          "refId": "A",
-          "round": "0s",
-          "showFormattedSQL": true,
-          "skip_comments": true,
-          "table": "prefix_flows_1m",
-          "useWindowFuncForMacros": true
-        }
-      ],
-      "title": "FPS",
-      "type": "timeseries"
     }
   ],
   "preload": false,
-  "schemaVersion": 41,
+  "schemaVersion": 42,
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
           "text": "All",
-          "value": [
-            "$__all"
-          ]
+          "value": ["$__all"]
         },
         "datasource": {
           "type": "vertamedia-clickhouse-datasource",
           "uid": "PDEE91DDB90597936"
         },
-        "definition": "SELECT prefix FROM prefixes",
+        "definition": "SELECT prefix FROM flows.prefixes",
         "description": "",
         "includeAll": true,
         "label": "Prefixes",
         "multi": true,
         "name": "prefixes",
         "options": [],
-        "query": "SELECT prefix FROM prefixes",
+        "query": "SELECT prefix FROM flows.prefixes",
         "refresh": 1,
         "regex": "",
         "sort": 7,
@@ -419,5 +306,5 @@
   "timezone": "browser",
   "title": "Traffic Prefixes",
   "uid": "fa480f15-26a7-4fa6-b134-1f0d8a323189",
-  "version": 2
+  "version": 1
 }
