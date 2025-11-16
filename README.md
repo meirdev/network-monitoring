@@ -33,7 +33,7 @@ Username and password for Grafana: `admin:admin`.
 
 ## Routers
 
-Some routers do not provide `sampling_rate` in their flow data, which is required to understand what the "real" traffic is. In this case, you can enter the router's IP address and sample rate into the `flows.routers` table:
+Some routers do not provide `sampling_rate` in their flow data, which is required to understand what the "real" traffic is. In this case, you can enter the router's IP address and sample rate into the `flows.config` table:
 
 ```sql
 INSERT INTO flows.routes (name, router_ip, default_sampling) VALUES ('my-router', '127.0.0.1', 1000);

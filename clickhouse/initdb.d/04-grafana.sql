@@ -37,8 +37,8 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.grafana_mv TO flows.grafana AS
         toDateTime64(time_flow_start_ns/1000000000, 9) AS time_flow_start,
         toDateTime64(time_flow_end_ns/1000000000, 9) AS time_flow_end,
 
-        bytes * if(flows.routers.default_sampling = 0, sampling_rate, flows.routers.default_sampling) AS bytes,
-        packets * if(flows.routers.default_sampling = 0, sampling_rate, flows.routers.default_sampling) AS packets,
+        bytes * if(flows.config.default_sampling = 0, sampling_rate, flows.config.default_sampling) AS bytes,
+        packets * if(flows.config.default_sampling = 0, sampling_rate, flows.config.default_sampling) AS packets,
 
         BytesToIPString(src_addr) AS src_addr,
         BytesToIPString(dst_addr) AS dst_addr,
@@ -55,4 +55,4 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.grafana_mv TO flows.grafana AS
         -- Fix for Juniper devices with `report-zero-oif-gw-on-discard` enabled:
         NumToForwardingStatusString(if(empty(next_hop) = 1 AND out_if = 0, 2, forwarding_status)) AS forwarding_status
     FROM flows.raw
-    LEFT JOIN flows.routers FINAL ON sampler_address == flows.routers.router_ip;
+    LEFT JOIN flows.config FINAL ON sampler_address == flows.config.router_ip;

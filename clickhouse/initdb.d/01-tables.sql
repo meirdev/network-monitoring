@@ -1,7 +1,7 @@
 CREATE DATABASE IF NOT EXISTS flows;
 
 
-CREATE TABLE IF NOT EXISTS flows.routers (
+CREATE TABLE IF NOT EXISTS flows.config (
     name LowCardinality(String),
     router_ip LowCardinality(String),
     default_sampling UInt64
