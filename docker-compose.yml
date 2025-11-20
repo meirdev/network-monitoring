@@ -20,7 +20,7 @@ services:
     restart: always
 
   grafana:
-    image: grafana/grafana:12.2
+    image: grafana/grafana:12.3
     container_name: network-monitoring-grafana
     environment:
       GF_INSTALL_PLUGINS: vertamedia-clickhouse-datasource 3.3.1,grafana-clickhouse-datasource
