@@ -63,6 +63,7 @@ services:
   db:
     image: clickhouse/clickhouse-server:25.10
     container_name: network-monitoring-clickhouse
+    restart: always
     environment:
       CLICKHOUSE_USER: default
       CLICKHOUSE_PASSWORD: password
