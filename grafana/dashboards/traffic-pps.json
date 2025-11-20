@@ -160,7 +160,7 @@
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_received",
+          "dateTimeColDataType": "time_received_dt",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -168,13 +168,13 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "SELECT $timeSeries as t, forwarding_status, floor(sum(packets) / $interval) AS bps FROM $table WHERE $timeFilter GROUP BY t, forwarding_status ORDER BY t",
-          "rawQuery": " /* grafana dashboard=Traffic / PPS, user=1 */\n\nSELECT\n    (intDiv(toFloat64(time_received) * 1000, (10 * 1000)) * (10 * 1000)) as t,\n    forwarding_status,\n    floor(sum(packets) / 10) AS bps\nFROM flows.grafana\n\nWHERE\n    time_received >= toDateTime64(1762624762,3) AND time_received <= toDateTime64(1762631962,3)\n    AND src_addr = '172.30.20.102'\nGROUP BY\n    t,\n    forwarding_status\nORDER BY t\n",
+          "query": "SELECT $timeSeries as t, forwarding_status_str, floor(sum(total_packets) / $interval) AS bps FROM $table WHERE $timeFilter GROUP BY t, forwarding_status_str ORDER BY t",
+          "rawQuery": " /* grafana dashboard=Traffic / PPS, user=1 */\n\nSELECT\n    (intDiv(toFloat64(time_received_dt) * 1000, (10 * 1000)) * (10 * 1000)) as t,\n    forwarding_status_str,\n    floor(sum(total_packets) / 10) AS bps\nFROM flows.raw\n\nWHERE\n    time_received_dt >= toDateTime64(1762624762,3) AND time_received_dt <= toDateTime64(1762631962,3)\n    AND src_addr_str = '172.30.20.102'\nGROUP BY\n    t,\n    forwarding_status_str\nORDER BY t\n",
           "refId": "total",
           "round": "0s",
           "showFormattedSQL": false,
           "skip_comments": true,
-          "table": "grafana",
+          "table": "raw",
           "useWindowFuncForMacros": true
         }
       ],
@@ -244,7 +244,7 @@
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_received",
+          "dateTimeColDataType": "time_received_dt",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -252,12 +252,12 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "SELECT sum(packets) AS packets FROM $table WHERE $timeFilter",
-          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nSELECT sum(packets) AS packets FROM flows.grafana WHERE time_received >= toDateTime64(1762624762,3) AND time_received <= toDateTime64(1762631962,3)",
+          "query": "SELECT sum(total_packets) AS total_packets FROM $table WHERE $timeFilter",
+          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nSELECT sum(total_packets) AS total_packets FROM flows.raw WHERE time_received_dt >= toDateTime64(1762624762,3) AND time_received_dt <= toDateTime64(1762631962,3)",
           "refId": "A",
           "round": "0s",
           "skip_comments": true,
-          "table": "grafana",
+          "table": "raw",
           "useWindowFuncForMacros": true
         }
       ],
@@ -337,7 +337,7 @@
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_received",
+          "dateTimeColDataType": "time_received_dt",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -345,12 +345,12 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "1m",
           "intervalFactor": 1,
-          "query": "SELECT $timeSeries as t, floor(sum(packets) / $interval) AS bps FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
-          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nSELECT (intDiv(toFloat64(time_received) * 1000, (60 * 1000)) * (60 * 1000)) as t, floor(sum(packets) / 60) AS bps FROM flows.grafana WHERE time_received >= toDateTime64(1762624762,3) AND time_received <= toDateTime64(1762631962,3) GROUP BY t ORDER BY t",
+          "query": "SELECT $timeSeries as t, floor(sum(total_packets) / $interval) AS bps FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
+          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nSELECT (intDiv(toFloat64(time_received_dt) * 1000, (60 * 1000)) * (60 * 1000)) as t, floor(sum(total_packets) / 60) AS bps FROM flows.raw WHERE time_received_dt >= toDateTime64(1762624762,3) AND time_received_dt <= toDateTime64(1762631962,3) GROUP BY t ORDER BY t",
           "refId": "A",
           "round": "0s",
           "skip_comments": true,
-          "table": "grafana",
+          "table": "raw",
           "useWindowFuncForMacros": true
         }
       ],
@@ -481,22 +481,22 @@
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_received",
+          "dateTimeColDataType": "time_received_dt",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
           "format": "time_series",
-          "formattedQuery": "/* grafana dashboard='Traffic / Mbps', user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(5)(COLUMNS('dst_addr'), packets)) AS i FROM flows.grafana WHERE time_received >= toDateTime64(1762503591,3) AND time_received <= toDateTime64(1762507191,3) AND 1)\r\nSELECT (intDiv(toFloat64(time_received) * 1000, (60 * 1000)) * (60 * 1000)) as t, COLUMNS('dst_addr'), floor(sum(packets) / 60) AS bps FROM flows.grafana WHERE time_received >= toDateTime64(1762503591,3) AND time_received <= toDateTime64(1762507191,3) AND 1 AND COLUMNS('dst_addr') IN (SELECT i.1 FROM top_k) GROUP BY COLUMNS('dst_addr'), t ORDER BY t",
+          "formattedQuery": "/* grafana dashboard='Traffic / Mbps', user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(5)(COLUMNS('dst_addr_str'), total_packets)) AS i FROM flows.raw WHERE time_received_dt >= toDateTime64(1762503591,3) AND time_received_dt <= toDateTime64(1762507191,3) AND 1)\r\nSELECT (intDiv(toFloat64(time_received_dt) * 1000, (60 * 1000)) * (60 * 1000)) as t, COLUMNS('dst_addr_str'), floor(sum(total_packets) / 60) AS bps FROM flows.raw WHERE time_received_dt >= toDateTime64(1762503591,3) AND time_received_dt <= toDateTime64(1762507191,3) AND 1 AND COLUMNS('dst_addr_str') IN (SELECT i.1 FROM top_k) GROUP BY COLUMNS('dst_addr_str'), t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
           "nullifySparse": true,
-          "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(5)(${column}, packets)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT $timeSeries as t, ${column}, floor(sum(packets) / $interval) AS bps FROM $table WHERE $timeFilter AND $adhoc AND ${column} IN (SELECT i.1 FROM top_k) GROUP BY ${column}, t ORDER BY t",
-          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(5)(src_addr, packets)) AS i FROM flows.grafana WHERE time_received >= toDateTime64(1762624762,3) AND time_received <= toDateTime64(1762631962,3) AND 1)\r\nSELECT (intDiv(toFloat64(time_received) * 1000, (10 * 1000)) * (10 * 1000)) as t, src_addr, floor(sum(packets) / 10) AS bps FROM flows.grafana WHERE time_received >= toDateTime64(1762624762,3) AND time_received <= toDateTime64(1762631962,3) AND 1 AND src_addr IN (SELECT i.1 FROM top_k) GROUP BY src_addr, t ORDER BY t",
+          "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(5)(${column}, total_packets)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT $timeSeries as t, ${column}, floor(sum(total_packets) / $interval) AS bps FROM $table WHERE $timeFilter AND $adhoc AND ${column} IN (SELECT i.1 FROM top_k) GROUP BY ${column}, t ORDER BY t",
+          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(5)(src_addr_str, total_packets)) AS i FROM flows.raw WHERE time_received_dt >= toDateTime64(1762624762,3) AND time_received_dt <= toDateTime64(1762631962,3) AND 1)\r\nSELECT (intDiv(toFloat64(time_received_dt) * 1000, (10 * 1000)) * (10 * 1000)) as t, src_addr_str, floor(sum(total_packets) / 10) AS bps FROM flows.raw WHERE time_received_dt >= toDateTime64(1762624762,3) AND time_received_dt <= toDateTime64(1762631962,3) AND 1 AND src_addr_str IN (SELECT i.1 FROM top_k) GROUP BY src_addr_str, t ORDER BY t",
           "refId": "A",
           "round": "0s",
           "showFormattedSQL": true,
           "skip_comments": true,
-          "table": "grafana",
+          "table": "raw",
           "useWindowFuncForMacros": true
         }
       ],
@@ -578,7 +578,7 @@
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_received",
+          "dateTimeColDataType": "time_received_dt",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -586,13 +586,13 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "SELECT proto, sum(packets) AS packets FROM $table WHERE $timeFilter GROUP BY proto HAVING packets > 0 ORDER BY packets DESC",
-          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nSELECT proto, sum(packets) AS packets FROM flows.grafana WHERE time_received >= toDateTime64(1762624762,3) AND time_received <= toDateTime64(1762631962,3) GROUP BY proto HAVING packets > 0 ORDER BY packets DESC",
+          "query": "SELECT proto_str, sum(total_packets) AS total_packets FROM $table WHERE $timeFilter GROUP BY proto_str HAVING total_packets > 0 ORDER BY total_packets DESC",
+          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nSELECT proto_str, sum(total_packets) AS total_packets FROM flows.raw WHERE time_received_dt >= toDateTime64(1762624762,3) AND time_received_dt <= toDateTime64(1762631962,3) GROUP BY proto_str HAVING total_packets > 0 ORDER BY total_packets DESC",
           "refId": "A",
           "round": "0s",
           "showFormattedSQL": true,
           "skip_comments": true,
-          "table": "grafana",
+          "table": "raw",
           "useWindowFuncForMacros": true
         }
       ],
@@ -651,7 +651,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "packets"
+              "options": "total_packets"
             },
             "properties": [
               {
@@ -663,7 +663,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "src_addr"
+              "options": "src_addr_str"
             },
             "properties": [
               {
@@ -697,7 +697,7 @@
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_received",
+          "dateTimeColDataType": "time_received_dt",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -705,13 +705,13 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_addr, packets)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS src_addr, i.2 AS packets FROM top_k",
-          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_addr, packets)) AS i FROM flows.grafana WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) AND 1)\r\nSELECT i.1 AS src_addr, i.2 AS packets FROM top_k",
+          "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_addr_str, total_packets)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS src_addr_str, i.2 AS total_packets FROM top_k",
+          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_addr_str, total_packets)) AS i FROM flows.raw WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) AND 1)\r\nSELECT i.1 AS src_addr_str, i.2 AS total_packets FROM top_k",
           "refId": "A",
           "round": "0s",
           "showFormattedSQL": true,
           "skip_comments": true,
-          "table": "grafana",
+          "table": "raw",
           "useWindowFuncForMacros": true
         }
       ],
@@ -757,7 +757,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "packets"
+              "options": "total_packets"
             },
             "properties": [
               {
@@ -803,7 +803,7 @@
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_received",
+          "dateTimeColDataType": "time_received_dt",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -811,12 +811,12 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_port, packets)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS src_port, i.2 AS packets FROM top_k",
-          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_port, packets)) AS i FROM flows.grafana WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) AND 1)\r\nSELECT i.1 AS src_port, i.2 AS packets FROM top_k",
+          "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_port, total_packets)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS src_port, i.2 AS total_packets FROM top_k",
+          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(src_port, total_packets)) AS i FROM flows.raw WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) AND 1)\r\nSELECT i.1 AS src_port, i.2 AS total_packets FROM top_k",
           "refId": "A",
           "round": "0s",
           "skip_comments": true,
-          "table": "grafana",
+          "table": "raw",
           "useWindowFuncForMacros": true
         }
       ],
@@ -889,7 +889,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "packets"
+              "options": "total_packets"
             },
             "properties": [
               {
@@ -901,7 +901,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "dst_addr"
+              "options": "dst_addr_str"
             },
             "properties": [
               {
@@ -935,7 +935,7 @@
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_received",
+          "dateTimeColDataType": "time_received_dt",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -943,13 +943,13 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_addr, packets)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS dst_addr, i.2 AS packets FROM top_k",
-          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_addr, packets)) AS i FROM flows.grafana WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) AND 1)\r\nSELECT i.1 AS dst_addr, i.2 AS packets FROM top_k",
+          "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_addr_str, total_packets)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS dst_addr_str, i.2 AS total_packets FROM top_k",
+          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_addr_str, total_packets)) AS i FROM flows.raw WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) AND 1)\r\nSELECT i.1 AS dst_addr_str, i.2 AS total_packets FROM top_k",
           "refId": "A",
           "round": "0s",
           "showFormattedSQL": true,
           "skip_comments": true,
-          "table": "grafana",
+          "table": "raw",
           "useWindowFuncForMacros": true
         }
       ],
@@ -995,7 +995,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "packets"
+              "options": "total_packets"
             },
             "properties": [
               {
@@ -1044,7 +1044,7 @@
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_received",
+          "dateTimeColDataType": "time_received_dt",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -1052,12 +1052,12 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_port, packets)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS dst_port, i.2 AS packets FROM top_k",
-          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_port, packets)) AS i FROM flows.grafana WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) AND 1)\r\nSELECT i.1 AS dst_port, i.2 AS packets FROM top_k",
+          "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_port, total_packets)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS dst_port, i.2 AS total_packets FROM top_k",
+          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nWITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(dst_port, total_packets)) AS i FROM flows.raw WHERE time_flow_start >= toDateTime64(1762501837,3) AND time_flow_start <= toDateTime64(1762505437,3) AND 1)\r\nSELECT i.1 AS dst_port, i.2 AS total_packets FROM top_k",
           "refId": "A",
           "round": "0s",
           "skip_comments": true,
-          "table": "grafana",
+          "table": "raw",
           "useWindowFuncForMacros": true
         }
       ],
@@ -1153,7 +1153,7 @@
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_received",
+          "dateTimeColDataType": "time_received_dt",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -1161,12 +1161,12 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "SELECT tcp_flags, sum(packets) AS packets FROM $table WHERE $timeFilter GROUP BY tcp_flags HAVING packets > 0 ORDER BY packets DESC",
-          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nSELECT tcp_flags, sum(packets) AS packets FROM flows.grafana WHERE time_received >= toDateTime64(1762624762,3) AND time_received <= toDateTime64(1762631962,3) GROUP BY tcp_flags HAVING packets > 0 ORDER BY packets DESC",
+          "query": "SELECT tcp_flags_str, sum(total_packets) AS total_packets FROM $table WHERE $timeFilter GROUP BY tcp_flags_str HAVING total_packets > 0 ORDER BY total_packets DESC",
+          "rawQuery": "/* grafana dashboard=Traffic / PPS, user=1 */\nSELECT tcp_flags_str, sum(total_packets) AS total_packets FROM flows.raw WHERE time_received_dt >= toDateTime64(1762624762,3) AND time_received_dt <= toDateTime64(1762631962,3) GROUP BY tcp_flags_str HAVING total_packets > 0 ORDER BY total_packets DESC",
           "refId": "A",
           "round": "0s",
           "skip_comments": true,
-          "table": "grafana",
+          "table": "raw",
           "useWindowFuncForMacros": true
         }
       ],
@@ -1225,7 +1225,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "packets"
+              "options": "total_packets"
             },
             "properties": [
               {
@@ -1237,7 +1237,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "sampler_address"
+              "options": "sampler_address_str"
             },
             "properties": [
               {
@@ -1272,7 +1272,7 @@
             "type": "vertamedia-clickhouse-datasource",
             "uid": "PDEE91DDB90597936"
           },
-          "dateTimeColDataType": "time_received",
+          "dateTimeColDataType": "time_received_dt",
           "dateTimeType": "DATETIME64",
           "editorMode": "sql",
           "extrapolate": true,
@@ -1280,12 +1280,12 @@
           "formattedQuery": "SELECT $timeSeries as t, count() FROM $table WHERE $timeFilter GROUP BY t ORDER BY t",
           "interval": "",
           "intervalFactor": 1,
-          "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(sampler_address, packets)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS sampler_address, i.2 AS packets FROM top_k",
-          "rawQuery": " /* grafana dashboard=Traffic / PPS, user=1 */\n\nWITH top_k AS(SELECT arrayJoin(approx_top_sum(10)(sampler_address, packets)) AS i FROM flows.grafana WHERE time_received >= toDateTime64(1762501837,3) AND time_received <= toDateTime64(1762505437,3) AND (sampler_address = '10.201.1.2'))\nSELECT\n    i .1 AS sampler_address,\n    i .2 AS packets\nFROM top_k\n",
+          "query": "WITH top_k AS (SELECT arrayJoin(approx_top_sum(10)(sampler_address_str, total_packets)) AS i FROM $table WHERE $timeFilter AND $adhoc)\r\nSELECT i.1 AS sampler_address_str, i.2 AS total_packets FROM top_k",
+          "rawQuery": " /* grafana dashboard=Traffic / PPS, user=1 */\n\nWITH top_k AS(SELECT arrayJoin(approx_top_sum(10)(sampler_address_str, total_packets)) AS i FROM flows.raw WHERE time_received_dt >= toDateTime64(1762501837,3) AND time_received_dt <= toDateTime64(1762505437,3) AND (sampler_address_str = '10.201.1.2'))\nSELECT\n    i .1 AS sampler_address_str,\n    i .2 AS total_packets\nFROM top_k\n",
           "refId": "A",
           "round": "0s",
           "skip_comments": true,
-          "table": "grafana",
+          "table": "raw",
           "useWindowFuncForMacros": true
         }
       ],
@@ -1301,8 +1301,8 @@
       {
         "allowCustomValue": false,
         "current": {
-          "text": "proto_string",
-          "value": "proto_string"
+          "text": "proto_str",
+          "value": "proto_str"
         },
         "description": "",
         "label": "Summary by",
@@ -1311,7 +1311,7 @@
           {
             "selected": false,
             "text": "Source IP",
-            "value": "src_addr"
+            "value": "src_addr_str"
           },
           {
             "selected": false,
@@ -1321,7 +1321,7 @@
           {
             "selected": false,
             "text": "Destination IP",
-            "value": "dst_addr"
+            "value": "dst_addr_str"
           },
           {
             "selected": false,
@@ -1331,20 +1331,20 @@
           {
             "selected": false,
             "text": "Router Address",
-            "value": "sampler_address"
+            "value": "sampler_address_str"
           },
           {
             "selected": true,
             "text": "Protocol",
-            "value": "proto_string"
+            "value": "proto_str"
           },
           {
             "selected": false,
             "text": "TCP Flags",
-            "value": "tcp_flags_string"
+            "value": "tcp_flags_str"
           }
         ],
-        "query": "Source IP : src_addr, Source Port : src_port, Destination IP : dst_addr, Destination Port : dst_port, Router Address : sampler_address, Protocol : proto, TCP Flags : tcp_flags",
+        "query": "Source IP : src_addr_str, Source Port : src_port, Destination IP : dst_addr_str, Destination Port : dst_port, Router Address : sampler_address_str, Protocol : proto_str, TCP Flags : tcp_flags_str",
         "type": "custom"
       },
       {
@@ -1359,13 +1359,13 @@
       },
       {
         "current": {
-          "text": "SELECT database, table, name, type FROM system.columns WHERE table='flows_raw' ORDER BY database, table",
-          "value": "SELECT database, table, name, type FROM system.columns WHERE table='flows_raw' ORDER BY database, table"
+          "text": "SELECT database, table, name, type FROM system.columns WHERE database = 'flows' AND table='raw' ORDER BY database, table",
+          "value": "SELECT database, table, name, type FROM system.columns WHERE database = 'flows' AND table='raw' ORDER BY database, table"
         },
         "description": "",
         "hide": 2,
         "name": "adhoc_query_filter",
-        "query": "SELECT database, table, name, type FROM system.columns WHERE table='flows_raw' ORDER BY database, table",
+        "query": "SELECT database, table, name, type FROM system.columns WHERE database = 'flows' AND table='raw' ORDER BY database, table",
         "skipUrlSync": true,
         "type": "constant"
       }
