@@ -12,8 +12,8 @@ import (
 type Router struct {
 	Id              string `ch:"id" json:"id"`
 	Name            string `ch:"name" json:"name" binding:"required"`
-	RouterIP        string `ch:"router_ip" json:"router_ip" binding:"required"`
-	DefaultSampling uint64 `ch:"default_sampling" json:"default_sampling" binding:"required"`
+	RouterIP        string `ch:"router_ip" json:"router_ip" binding:"required,ip_addr"`
+	DefaultSampling uint64 `ch:"default_sampling" json:"default_sampling" binding:"required,min=1"`
 }
 
 type RouterService struct {

@@ -10,14 +10,14 @@ import (
 
 type Rule struct {
 	Id                 string   `ch:"id" json:"id"`
-	Name               string   `ch:"name" json:"name" binding:"required,max=255"`
+	Name               string   `ch:"name" json:"name" binding:"required,max=256"`
 	Prefixes           []string `ch:"prefixes" json:"prefixes" binding:"required,dive,cidr"`
 	Type               string   `ch:"type" json:"type" binding:"required,oneof=threshold zscore advanced_ddos"`
 	BandwidthThreshold *uint64  `ch:"bandwidth_threshold" json:"bandwidth_threshold" binding:"omitempty,min=1"`
 	PacketThreshold    *uint64  `ch:"packet_threshold" json:"packet_threshold" binding:"omitempty,min=1"`
-	Duration           *string  `ch:"duration" json:"duration" binding:"omitempty,oneof=1m 5m 10m 15m 20m 30m 45m 60m"`
-	ZScoreSensitivity  *string  `ch:"zscore_sensitivity" json:"zscore_sensitivity" binding:"omitempty,oneof=low medium high"`
-	ZScoreTarget       *string  `ch:"zscore_target" json:"zscore_target" binding:"omitempty,oneof=bits packets"`
+	Duration           *string  `ch:"duration" json:"duration" binding:"omitempty,oneof=1m 5m 10m 15m 20m 30m 45m 60m,required_if=type threshold"`
+	ZScoreSensitivity  *string  `ch:"zscore_sensitivity" json:"zscore_sensitivity" binding:"omitempty,oneof=low medium high,required_if=type zscore"`
+	ZScoreTarget       *string  `ch:"zscore_target" json:"zscore_target" binding:"omitempty,oneof=bits packets,required_if=type zscore"`
 }
 
 type RuleService struct {
