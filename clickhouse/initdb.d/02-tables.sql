@@ -14,9 +14,9 @@ CREATE TABLE IF NOT EXISTS flows.rules
     name LowCardinality(String),
     prefixes Array(LowCardinality(String)),
     type Enum('threshold', 'zscore', 'advanced_ddos'),
-    bandwidth_threshold Nullable(UInt64),
+    bandwidth_threshold Nullable(UInt64) COMMENT 'in bits per second',
     packet_threshold Nullable(UInt64),
-    duration Nullable(String),
+    duration Nullable(UInt64) COMMENT 'in minutes',
     zscore_sensitivity Nullable(Enum('low', 'medium', 'high')),
     zscore_target Nullable(Enum('bits', 'packets'))
 )
