@@ -121,3 +121,18 @@ ENGINE = SummingMergeTree()
 PARTITION BY toDate(time_received)
 ORDER BY (prefix, time_received)
 TTL toDate(time_received) + INTERVAL 30 DAY;
+
+
+-- The IP_TRIE layout of the dictionary did not allow us to get all the prefixes that match a given IP address.
+-- Example: If we have prefixes of '10.0.0.0/8' and '10.0.0/16', and we query for '10.0.0.1', we will only get the most specific prefix '10.0.0/16'.
+-- If it's really necessary, we can create a table with prefixes and use it instead of the dictionary.
+
+-- We convert the prefixes to ranges so that we can speed up the search for matching prefixes.
+
+CREATE TABLE IF NOT EXISTS flows.prefixes_range (
+    prefix String,
+    start UInt128,
+    end UInt128
+)
+ENGINE = MergeTree()
+ORDER BY (start, end);

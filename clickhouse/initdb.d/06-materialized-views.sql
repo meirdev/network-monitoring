@@ -72,9 +72,63 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
     LEFT ANY JOIN flows.routers ON sampler_address_str == flows.routers.router_ip;
 
 
+-- CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_total_1m_mv TO flows.prefixes_total_1m AS
+--     SELECT
+--         dictGetStringOrDefault('flows.prefixes', 'prefix', toIPv6(dst_addr_str), '') AS prefix,
+
+--         toStartOfMinute(time_received_dt) AS time_received,
+
+--         sum(total_bytes) AS bytes,
+--         sum(total_packets) AS packets,
+--         count() AS flows
+--     FROM flows.raw
+--     WHERE prefix <> ''
+--     GROUP BY prefix, time_received;
+
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_range_mv
+REFRESH EVERY 1 MINUTE TO flows.prefixes_range AS
+    WITH split_prefix AS (
+        SELECT
+            arrayJoin(prefixes) AS prefix,
+            splitByChar('/', prefix) AS ip_mask,
+            ip_mask[1] AS ip,
+            toUInt8(ip_mask[2]) AS mask
+        FROM flows.rules
+    ),
+    ipv4_prefixes AS (
+        SELECT
+            prefix,
+            IPv4CIDRToRange(IPv4StringToNum(ip), mask) AS ip_range
+        FROM split_prefix
+        WHERE position(ip, '.') <> 0
+    ),
+    ipv6_prefixes AS (
+        SELECT
+            prefix,
+            IPv6CIDRToRange(IPv6StringToNum(ip), mask) AS ip_range
+        FROM split_prefix
+        WHERE position(ip, '.') = 0
+    )
+    SELECT prefix, toUInt128(ip_range.1) AS start, toUInt128(ip_range.2) AS end FROM ipv4_prefixes
+    UNION ALL
+    SELECT prefix, toUInt128(ip_range.1) AS start, toUInt128(ip_range.2) AS end FROM ipv6_prefixes
+    ORDER BY start, end;
+
+
 CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_total_1m_mv TO flows.prefixes_total_1m AS
+    WITH ip_list AS (
+        SELECT DISTINCT IPStringToNum(dst_addr_str) AS ip_num, dst_addr AS ip_bin FROM flows.raw
+    ),
+    prefixes AS (
+        SELECT
+            p.prefix,
+            l.ip_bin
+        FROM ip_list l, flows.prefixes_range p
+        WHERE l.ip_num BETWEEN p.start AND p.end
+    )
     SELECT
-        dictGetStringOrDefault('flows.prefixes', 'prefix', toIPv6(dst_addr_str), '') AS prefix,
+        prefixes.prefix AS prefix,
 
         toStartOfMinute(time_received_dt) AS time_received,
 
@@ -82,5 +136,6 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_total_1m_mv TO flows.prefi
         sum(total_packets) AS packets,
         count() AS flows
     FROM flows.raw
+    LEFT JOIN prefixes ON flows.raw.dst_addr = prefixes.ip_bin
     WHERE prefix <> ''
     GROUP BY prefix, time_received;
