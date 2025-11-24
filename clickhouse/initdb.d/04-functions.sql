@@ -35,37 +35,17 @@ CREATE FUNCTION IF NOT EXISTS NumToProtoString AS (proto) ->
 );
 
 
-CREATE FUNCTION IF NOT EXISTS fireStaticBpsThresholdAlert AS (ip_prefix, threshold, duration, `datetime`) ->
+CREATE FUNCTION IF NOT EXISTS fireStaticThresholdAlert AS (ip_prefix, threshold, target, duration, `datetime`) ->
 (
-    WITH toDateTime(`datetime`) AS datetime_rounded,
-    result AS (
+    WITH
+        toDateTime(`datetime`) AS datetime_rounded,
+        if(target = 'bits', bytes * 8 / 60, packets / 60) AS metric
         SELECT
-            bytes * 8 / 60 AS bps,
-            bps >= threshold AS is_exceeded
+            countIf(metric >= threshold) = count(*)
         FROM flows.prefixes_total_1m FINAL
         WHERE
             prefix = ip_prefix AND
-            time_received >= datetime_rounded - duration AND
-            time_received <= datetime_rounded
-    )
-    SELECT countIf(is_exceeded = true) = date_diff('minute', datetime_rounded - duration, datetime_rounded) FROM result
-);
-
-
-CREATE FUNCTION IF NOT EXISTS fireStaticPpsThresholdAlert AS (ip_prefix, threshold, duration, `datetime`) ->
-(
-    WITH toDateTime(`datetime`) AS datetime_rounded,
-    result AS (
-        SELECT
-            packets / 60 AS pps,
-            pps >= threshold AS is_exceeded
-        FROM flows.prefixes_total_1m FINAL
-        WHERE
-            prefix = ip_prefix AND
-            time_received >= datetime_rounded - duration AND
-            time_received <= datetime_rounded
-    )
-    SELECT countIf(is_exceeded = true) = date_diff('minute', datetime_rounded - duration, datetime_rounded) FROM result
+            time_received BETWEEN datetime_rounded - duration AND datetime_rounded
 );
 
 
@@ -77,76 +57,28 @@ CREATE FUNCTION IF NOT EXISTS fireStaticPpsThresholdAlert AS (ip_prefix, thresho
 -- medium: z-score >= 3
 -- high: z-score >= 2
 
+-- target: bits or packets
 
-CREATE FUNCTION IF NOT EXISTS fireDynamicBpsThresholdAlert AS (ip_prefix, sensitivity, `datetime`) ->
+
+CREATE FUNCTION IF NOT EXISTS fireDynamicThresholdAlert AS (ip_prefix, sensitivity, target, `datetime`) ->
 (
-    WITH toDateTime(`datetime`) AS datetime_rounded,
-    short_window AS (
-        SELECT
-            avg(bytes * 8 / 60) AS avg_bps
-        FROM flows.prefixes_total_1m FINAL
-        WHERE
-            prefix = ip_prefix AND
-            time_received >= datetime_rounded - INTERVAL 5 MINUTE AND
-            time_received <= datetime_rounded
-    ),
-    long_window AS (
-        SELECT
-            stddevPopStable(bytes * 8 / 60) AS stddev_bps,
-            avg(bytes * 8 / 60) AS avg_bps
-        FROM flows.prefixes_total_1m FINAL
-        WHERE
-            prefix = ip_prefix AND
-            time_received >= datetime_rounded - INTERVAL 4 HOUR AND
-            time_received <= datetime_rounded
-    ),
-    result AS (
-        SELECT
-            (short_window.avg_bps - long_window.avg_bps) / long_window.stddev_bps AS z_score
-        FROM short_window, long_window
-    )
-    SELECT
-        (
-            (sensitivity = 'low' AND result.z_score >= 4) OR
-            (sensitivity = 'medium' AND result.z_score >= 3) OR
-            (sensitivity = 'high' AND result.z_score >= 2)
+    WITH
+        toDateTime(`datetime`) AS datetime_rounded,
+        datetime_rounded - INTERVAL 5 MINUTE AS short_win,
+        datetime_rounded - INTERVAL 4 HOUR AS long_win,
+        if(target = 'bits', bytes * 8 / 60, packets / 60) AS metric,
+        transform(sensitivity, ['low', 'medium', 'high'], [4, 3, 2], 3) AS z_threshold,
+        stats AS (
+            SELECT
+                avgIf(metric, time_received >= short_win) AS short_avg,
+                avg(metric) AS long_avg,
+                stddevPopStable(metric) AS long_stddev
+            FROM flows.prefixes_total_1m FINAL
+            WHERE
+                prefix = ip_prefix AND
+                time_received BETWEEN long_win AND datetime_rounded
         )
-    FROM result
-);
-
-
-CREATE FUNCTION IF NOT EXISTS fireDynamicPpsThresholdAlert AS (ip_prefix, sensitivity, `datetime`) ->
-(
-    WITH toDateTime(`datetime`) AS datetime_rounded,
-    short_window AS (
-        SELECT
-            avg(packets / 60) AS avg_pps
-        FROM flows.prefixes_total_1m FINAL
-        WHERE
-            prefix = ip_prefix AND
-            time_received >= datetime_rounded - INTERVAL 5 MINUTE AND
-            time_received <= datetime_rounded
-    ),
-    long_window AS (
-        SELECT
-            stddevPopStable(packets / 60) AS stddev_pps,
-            avg(packets / 60) AS avg_pps
-        FROM flows.prefixes_total_1m FINAL
-        WHERE
-            prefix = ip_prefix AND
-            time_received >= datetime_rounded - INTERVAL 4 HOUR AND
-            time_received <= datetime_rounded
-    ),
-    result AS (
-        SELECT
-            (short_window.avg_pps - long_window.avg_pps) / long_window.stddev_pps AS z_score
-        FROM short_window, long_window
-    )
-    SELECT
-        (
-            (sensitivity = 'low' AND result.z_score >= 4) OR
-            (sensitivity = 'medium' AND result.z_score >= 3) OR
-            (sensitivity = 'high' AND result.z_score >= 2)
-        )
-    FROM result
+        SELECT 
+            if(stats.long_stddev = 0, false, (stats.short_avg - stats.long_avg) / stats.long_stddev >= z_threshold)
+        FROM stats
 );
