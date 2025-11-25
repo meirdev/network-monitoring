@@ -100,7 +100,7 @@ func (s *RuleService) UpdateRule(ctx context.Context, rule Rule) error {
 	if err := s.Connection.Exec(
 		ctx,
 		"ALTER TABLE flows.rules UPDATE name = @name, prefixes = @prefixes, type = @type, bandwidth_threshold = @bandwidth_threshold, packet_threshold = @packet_threshold, duration = @duration, zscore_sensitivity = @zscore_sensitivity, zscore_target = @zscore_target WHERE id = @id",
-		clickhouse.Named("id", common.GenerateId()),
+		clickhouse.Named("id", rule.Id),
 		clickhouse.Named("name", rule.Name),
 		clickhouse.Named("prefixes", rule.Prefixes),
 		clickhouse.Named("type", rule.Type),
