@@ -34,8 +34,13 @@ CREATE FUNCTION IF NOT EXISTS NumToProtoString AS (proto) ->
     dictGetOrDefault('flows.protocols', 'name', proto, toString(proto))
 );
 
+CREATE FUNCTION IF NOT EXISTS SensitivityLevelToZScore AS (sensitivity) ->
+(
+    transform(sensitivity, ['low', 'medium', 'high'], [4, 3, 2], 3)
+);
 
-CREATE FUNCTION IF NOT EXISTS fireStaticThresholdAlert AS (ip_prefix, threshold, target, duration, `datetime`) ->
+
+CREATE FUNCTION IF NOT EXISTS FireStaticThresholdAlert AS (ip_prefix, threshold, target, duration, `datetime`) ->
 (
     WITH
         toDateTime(`datetime`) AS datetime_rounded,
@@ -60,14 +65,14 @@ CREATE FUNCTION IF NOT EXISTS fireStaticThresholdAlert AS (ip_prefix, threshold,
 -- target: bits or packets
 
 
-CREATE FUNCTION IF NOT EXISTS fireDynamicThresholdAlert AS (ip_prefix, sensitivity, target, `datetime`) ->
+CREATE FUNCTION IF NOT EXISTS FireDynamicThresholdAlert AS (ip_prefix, sensitivity, target, `datetime`) ->
 (
     WITH
         toDateTime(`datetime`) AS datetime_rounded,
         datetime_rounded - INTERVAL 5 MINUTE AS short_win,
         datetime_rounded - INTERVAL 4 HOUR AS long_win,
         if(target = 'bits', bytes * 8 / 60, packets / 60) AS metric,
-        transform(sensitivity, ['low', 'medium', 'high'], [4, 3, 2], 3) AS z_threshold,
+        SensitivityLevelToZScore(sensitivity) AS z_threshold,
         stats AS (
             SELECT
                 avgIf(metric, time_received >= short_win) AS short_avg,
