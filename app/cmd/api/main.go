@@ -95,7 +95,7 @@ func main() {
 		dashboardGroup.GET("/top", dashboardController.GetTop)
 	}
 
-	log.Println("Starting server on ", listenAddr)
+	log.Println("Starting server on", listenAddr)
 	if err := router.Run(listenAddr); err != nil {
 		log.Fatal(err)
 	}
