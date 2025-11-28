@@ -31,105 +31,102 @@ Username and password for ClickHouse: `default:password`.
 
 Username and password for Grafana: `admin:admin`.
 
-## Routers
+##  Routers
 
-Some routers do not provide `sampling_rate` in their flow data, which is required to understand what the "real" traffic is. In this case, you can enter the router's IP address and sample rate into the `flows.config` table:
+Some routers do not provide `sampling_rate` in their flow data, which is required to understand what the "real" traffic is. In this case, you can enter the router's IP address with the `default_sampling`:
 
-```sql
-INSERT INTO flows.routes (name, router_ip, default_sampling) VALUES ('my-router', '127.0.0.1', 1000);
+```bash
+curl -X POST http://localhost:8090/routers \
+  -d '{
+    "name": "my-router",
+    "router_ip": "127.0.0.1",
+    "default_sampling": 1000
+  }'
 ```
-
-## Prefixes
-
-It is common to use prefixes to group traffic by network segments. You can add prefixes to the `flows.prefixes` table:
-
-```sql
-INSERT INTO flows.prefixes VALUES ('10.0.0.0/24');
-```
-
-We use clickhouse dictionaries to speed up prefix lookups. The dictionary is automatically populated from the `flows.prefixes` table and is updated every 5 minutes. If you want to update it manually, you can run:
-
-```sql
-SYSTEM RELOAD DICTIONARY dictionaries.prefixes;
-```
-
-For each prefix, we collect the traffic (bytes and packets) for each minute, and store it in the `flows.prefixes_total_1m` table.
-
-_**Important Note**: The traffic is collected for the smallest prefix that matches the flow._
 
 ## Rules
 
-We provide two types of functions to help you generate alerts based on traffic thresholds. To use these functions, you must add the prefixes in advance to the `flows.prefixes` table.
+### Static Rule
 
-### Function definitions:
-
-#### fireStaticBpsThresholdAlert/fireStaticPpsThresholdAlert
-
-Alert when traffic exceeds a predefined threshold.
-
-```
-fireStaticBpsThresholdAlert(ip_prefix, threshold, duration, datetime) -> bool
-fireStaticPpsThresholdAlert(ip_prefix, threshold, duration, datetime) -> bool
-```
-
-Args:
-
-- `ip_prefix`: The IP prefix to check (e.g., '10.0.0.0/24').
-- `threshold`: The threshold value in bytes per second (for BPS) or packets per second (for PPS).
-- `duration`: The duration over which to check the threshold (e.g., INTERVAL 1 HOUR).
-- `datetime`: The point in time to check the threshold (e.g., `now()`).
-
-Returns:
-
-- `true` if the threshold is exceeded, `false` otherwise.
-
-Example Usage:
-
-```sql
-SELECT fireStaticBpsThresholdAlert('10.0.0.0/24', 100000000, INTERVAL 1 HOUR, now());
-```
-
-#### fireDynamicBpsThresholdAlert/fireDynamicPpsThresholdAlert
-
-Alert when traffic deviates significantly from the historical average. based on z-scores.
-
-```
-fireDynamicBpsThresholdAlert(ip_prefix, sensitivity, datetime) -> bool
-fireDynamicPpsThresholdAlert(ip_prefix, sensitivity, datetime) -> bool
-```
-
-Args:
-
-- `ip_prefix`: The IP prefix to check (e.g., '10.0.0.0/24').
-- `sensitivity`: The sensitivity level for the dynamic threshold. Possible values are:
-  - `low`: z-score >= 4
-  - `medium`: z-score >= 3
-  - `high`: z-score >= 2
-- `datetime`: The point in time to check the threshold (e.g., `now()`).
-
-Returns:
-
-- `true` if the dynamic threshold is exceeded, `false` otherwise.
-
-Example Usage:
-
-```sql
-SELECT fireDynamicBpsThresholdAlert('10.0.0.0/24', 'medium', now());
-```
-
-### Alerting
-
-You can use the above functions in your alerting system. For example, you can create a cron job that runs every minute to check for alerts and send notifications if any are triggered. Example script:
+Monitor a network prefix and alert when bandwidth exceeds 1 Gbps for 5 consecutive minutes:
 
 ```bash
-#!/bin/bash
+curl -X POST http://localhost:8090/rules \
+  -d '{
+    "name": "Production Network - High Bandwidth",
+    "prefixes": ["10.0.0.0/8"],
+    "type": "threshold",
+    "bandwidth_threshold": 1000000000,
+    "duration": 5
+  }'
+```
 
-# Returns 1 if the bps rate on 10.0.0.0/16 exceeds 10 Mbps in the last 2 minutes, otherwise returns 0.
-QUERY_RESULT=$(clickhouse-client --password password --query "SELECT fireStaticBpsThresholdAlert('10.0.0.0/16', 10000000, INTERVAL 2 MINUTE, now())")
+Monitor for DDoS attacks by detecting high packet rates, 1 Mps for 3 consecutive minutes:
 
-if [[ "$QUERY_RESULT" == "1" ]]; then
-    echo "Alert: Traffic exceeded threshold!"
-else
-    echo "No alert triggered."
-fi
+```bash
+curl -X POST http://localhost:8090/rules \
+  -d '{
+    "name": "DDoS Detection - Packet Flood",
+    "prefixes": ["203.0.113.0/24"],
+    "type": "threshold",
+    "packet_threshold": 1000000,
+    "duration": 3
+  }'
+```
+
+### Dynamic Rule
+
+Detect unusual bandwidth spikes with medium sensitivity:
+
+```bash
+curl -X POST http://localhost:8090/rules \
+  -d '{
+    "name": "Web Servers - Bandwidth Anomaly",
+    "prefixes": ["10.20.30.0/24"],
+    "type": "zscore",
+    "zscore_sensitivity": "medium",
+    "zscore_target": "bits"
+  }'
+```
+
+Options:
+
+zscore_sensitivity: `low`, `medium`, `high`.
+
+zscore_target: `bits`, `packets`.
+
+## API Reference
+
+### Routers
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/routers` | List all routers |
+| GET | `/routers/:router_id` | Get specific router |
+| POST | `/routers` | Create new router |
+| PUT | `/routers/:router_id` | Update router |
+| DELETE | `/routers/:router_id` | Delete router |
+
+### Rules
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/rules` | List all rules |
+| GET | `/rules/:rule_id` | Get specific rule |
+| POST | `/rules` | Create new rule |
+| PUT | `/rules/:rule_id` | Update rule |
+| DELETE | `/rules/:rule_id` | Delete rule |
+
+## Alerting
+
+The `alert` script is used to trigger another command whenever rules are crossed.
+Add it to your crontab (or a similar scheduler) and run it every 30–60 seconds.
+
+Example with `mail` command:
+
+```bash
+./alert | \
+  mail -s "Network Alert" \
+       -a "Content-Type: application/json" \
+       mssp@example.com
 ```
