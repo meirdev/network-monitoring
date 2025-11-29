@@ -7,18 +7,11 @@ fi
 
 alert_command="$1"
 
-query_result=$(docker exec network-monitoring-clickhouse clickhouse-client --password password --query "
-with alerts as (
-    select id, bandwidth_alert, packet_alert from flows.static_threshold_alerts_vw(date=now(), max_duration=60)
-    union all
-    select id, bandwidth_alert, packet_alert from flows.dynamic_threshold_alerts_vw(date=now())
-)
-select id, name, bandwidth_alert, packet_alert from alerts left join flows.rules using id format json
-")
+query_result=$(curl http://localhost:8090/alerts/thresholds)
 
-alerts_length=$(echo $query_result | jq '.data | length')
+alerts_length=$(echo $query_result | jq '.result | length')
 
-alerts=$(echo $query_result | jq '.data')
+alerts=$(echo $query_result | jq '.result')
 
 if [ "$alerts_length" -gt 0 ]; then
     echo $alerts | $alert_command

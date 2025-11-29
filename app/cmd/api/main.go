@@ -95,6 +95,14 @@ func main() {
 		dashboardGroup.GET("/top", dashboardController.GetTop)
 	}
 
+	alertService := services.NewAlertService(conn)
+	alertController := controllers.NewAlertController(alertService)
+
+	alertsGroup := router.Group("/alerts")
+	{
+		alertsGroup.GET("/thresholds", alertController.GetThresholdAlerts)
+	}
+
 	log.Println("Starting server on", listenAddr)
 	if err := router.Run(listenAddr); err != nil {
 		log.Fatal(err)
