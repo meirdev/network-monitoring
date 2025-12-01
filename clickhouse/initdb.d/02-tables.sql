@@ -104,7 +104,8 @@ ADD COLUMN dst_addr_str String,
 ADD COLUMN etype_str LowCardinality(String),
 ADD COLUMN proto_str LowCardinality(String),
 ADD COLUMN tcp_flags_str LowCardinality(String),
-ADD COLUMN forwarding_status_str LowCardinality(String);
+ADD COLUMN forwarding_status_str LowCardinality(String),
+ADD COLUMN prefixes Array(LowCardinality(String));
 
 
 CREATE TABLE IF NOT EXISTS flows.prefixes_total_1m
@@ -136,3 +137,21 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_range (
 )
 ENGINE = MergeTree()
 ORDER BY (start, end);
+
+
+CREATE TABLE IF NOT EXISTS flows.prefixes_src_profile_10m
+(
+    prefix LowCardinality(String),
+
+    network String CODEC(ZSTD(6)),
+
+    time_received DateTime,
+
+    bytes UInt64,
+    packets UInt64,
+    flows UInt64
+)
+ENGINE = SummingMergeTree()
+PARTITION BY toDate(time_received)
+ORDER BY (prefix, network, time_received)
+TTL toDate(time_received) + INTERVAL 7 DAY;
