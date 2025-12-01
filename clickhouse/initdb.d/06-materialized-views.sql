@@ -152,9 +152,9 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_src_profile_10m_mv TO flow
 
         multiIf(
             etype = 0x800,
-            IPv4NumToString(IPv4CIDRToRange(toIPv4(dst_addr_str), 24).1),
+            IPv4NumToString(IPv4CIDRToRange(toIPv4(src_addr_str), 24).1),
             etype = 0x86dd,
-            IPv6NumToString(IPv6CIDRToRange(toIPv6(dst_addr_str), 64).1),
+            IPv6NumToString(IPv6CIDRToRange(toIPv6(src_addr_str), 64).1),
             null
         ) AS network,
 
