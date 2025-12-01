@@ -20,12 +20,12 @@ CREATE VIEW IF NOT EXISTS flows.static_threshold_alerts_vw AS (
         )
     SELECT
         r.id,
-        countIf(r.bandwidth_threshold IS NOT NULL 
-                AND pm.bytes * 8 / 60 >= r.bandwidth_threshold 
+        any(r.bandwidth_threshold) IS NOT NULL AND
+            countIf(pm.bytes * 8 / 60 >= r.bandwidth_threshold 
                 AND pm.time_received >= datetime_rounded - toIntervalMinute(r.duration)) 
             = countIf(pm.time_received >= datetime_rounded - toIntervalMinute(r.duration)) AS bandwidth_alert,
-        countIf(r.packet_threshold IS NOT NULL 
-                AND pm.packets / 60 >= r.packet_threshold 
+        any(r.packet_threshold) IS NOT NULL AND 
+            countIf(pm.packets / 60 >= r.packet_threshold 
                 AND pm.time_received >= datetime_rounded - toIntervalMinute(r.duration)) 
             = countIf(pm.time_received >= datetime_rounded - toIntervalMinute(r.duration)) AS packet_alert
     FROM prefixes_1m pm
