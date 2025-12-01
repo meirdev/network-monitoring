@@ -26,7 +26,7 @@ CREATE FUNCTION IF NOT EXISTS NumToForwardingStatusString AS (forwarding_status)
 
 CREATE FUNCTION IF NOT EXISTS IPStringToNum AS (ip) ->
 (
-    if(position(ip, '.') <> 0, toUInt128(IPv4StringToNum(ip)), toUInt128(IPv6StringToNum(ip)))
+    if(isIPv4String(ip) = 1, toUInt128(IPv4StringToNumOrNull(ip)), reinterpretAsUInt128(reverse(IPv6StringToNumOrNull(dst_addr_str))))
 );
 
 CREATE FUNCTION IF NOT EXISTS NumToProtoString AS (proto) ->
