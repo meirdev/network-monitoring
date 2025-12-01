@@ -1,4 +1,18 @@
 CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
+    WITH temp AS (
+        SELECT * FROM flows.kafka_sink
+    ),
+    ip_list AS (
+        SELECT DISTINCT IPStringToNum(dst_addr_str) AS ip_num, dst_addr FROM temp
+    ),
+    dst_addr_to_prefixes AS (
+        SELECT
+            dst_addr,
+            groupArray(p.prefix) AS prefixes
+        FROM ip_list l, flows.prefixes_range p
+        WHERE l.ip_num BETWEEN p.start AND p.end
+        GROUP BY dst_addr
+    )
     SELECT
         type,
 
@@ -67,9 +81,12 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
         NumToTcpFlagsString(tcp_flags) AS tcp_flags_str,
 
         -- Fix for Juniper devices with `report-zero-oif-gw-on-discard` enabled:
-        NumToForwardingStatusString(if(empty(next_hop) = 1 AND out_if = 0, 2, forwarding_status)) AS forwarding_status_str
-    FROM flows.kafka_sink
-    LEFT ANY JOIN flows.routers ON sampler_address_str == flows.routers.router_ip;
+        NumToForwardingStatusString(if(empty(next_hop) = 1 AND out_if = 0, 2, forwarding_status)) AS forwarding_status_str,
+
+        prefixes
+    FROM temp
+    LEFT ANY JOIN flows.routers ON sampler_address_str == flows.routers.router_ip
+    LEFT JOIN dst_addr_to_prefixes USING dst_addr;
 
 
 -- CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_total_1m_mv TO flows.prefixes_total_1m AS
@@ -117,18 +134,8 @@ REFRESH EVERY 1 MINUTE TO flows.prefixes_range AS
 
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_total_1m_mv TO flows.prefixes_total_1m AS
-    WITH ip_list AS (
-        SELECT DISTINCT IPStringToNum(dst_addr_str) AS ip_num, dst_addr AS ip_bin FROM flows.raw
-    ),
-    prefixes AS (
-        SELECT
-            p.prefix,
-            l.ip_bin
-        FROM ip_list l, flows.prefixes_range p
-        WHERE l.ip_num BETWEEN p.start AND p.end
-    )
     SELECT
-        prefixes.prefix AS prefix,
+        arrayJoin(prefixes) AS prefix,
 
         toStartOfMinute(time_received_dt) AS time_received,
 
@@ -136,6 +143,26 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_total_1m_mv TO flows.prefi
         sum(total_packets) AS packets,
         count() AS flows
     FROM flows.raw
-    LEFT JOIN prefixes ON flows.raw.dst_addr = prefixes.ip_bin
-    WHERE prefix <> ''
     GROUP BY prefix, time_received;
+
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_src_profile_10m_mv TO flows.prefixes_src_profile_10m AS
+    SELECT
+        arrayJoin(prefixes) AS prefix,
+
+        multiIf(
+            etype = 0x800,
+            IPv4NumToString(IPv4CIDRToRange(toIPv4(dst_addr_str), 24).1),
+            etype = 0x86dd,
+            IPv6NumToString(IPv6CIDRToRange(toIPv6(dst_addr_str), 64).1),
+            null
+        ) AS network,
+
+        toStartOfTenMinutes(time_received_dt) AS time_received,
+
+        sum(total_bytes) AS bytes,
+        sum(total_packets) AS packets,
+        count() AS flows
+    FROM flows.raw
+    WHERE network IS NOT NULL
+    GROUP BY prefix, network, time_received;
