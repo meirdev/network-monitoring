@@ -209,14 +209,14 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_dst_profile_10m
     time_received DateTime,
 
     protoMap Nested(
-        proto UInt8,
+        proto String,
         bytes UInt64,
         packets UInt64,
         flows UInt64
     ),
 
     tcpFlagMap Nested(
-        tcp_flag UInt16,
+        tcp_flag String,
         bytes UInt64,
         packets UInt64,
         flows UInt64
@@ -228,5 +228,5 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_dst_profile_10m
 )
 ENGINE = SummingMergeTree()
 PARTITION BY toDate(time_received)
-ORDER BY (prefix, `protoMap.proto`, `tcpFlagMap.tcp_flag`, time_received)
+ORDER BY (prefix, time_received)
 TTL toDate(time_received) + INTERVAL 7 DAY;

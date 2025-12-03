@@ -14,6 +14,11 @@ CREATE FUNCTION IF NOT EXISTS NumToETypeString AS (etype) ->
     transform(etype, [0x800, 0x806, 0x86dd], ['IPv4', 'ARP', 'IPv6'], toString(etype))
 );
 
+CREATE FUNCTION IF NOT EXISTS NumToTcpFlagString AS (tcp_flag) ->
+(
+    transform(tcp_flag, [1, 2, 4, 8, 16, 32, 64, 128, 256, 512], ['FIN', 'SYN', 'RST', 'PSH', 'ACK', 'URG', 'ECN', 'CWR', 'NONCE', 'RESERVED'], toString(tcp_flag))
+);
+
 CREATE FUNCTION IF NOT EXISTS NumToTcpFlagsString AS (tcp_flags) ->
 (
     if(tcp_flags = 0, 'EMPTY', arrayStringConcat(arrayMap(x -> transform(x, [1, 2, 4, 8, 16, 32, 64, 128, 256, 512], ['FIN', 'SYN', 'RST', 'PSH', 'ACK', 'URG', 'ECN', 'CWR', 'NONCE', 'RESERVED'], toString(x)), bitmaskToArray(tcp_flags)), '+'))

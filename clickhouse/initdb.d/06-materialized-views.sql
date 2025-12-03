@@ -166,12 +166,29 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_src_profile_10m_mv TO flow
 
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_dst_profile_10m_mv TO flows.prefixes_dst_profile_10m AS
-    WITH temp (
+    SELECT
+        prefix,
+        time_received,
+
+        [proto_str] AS `protoMap.proto`,
+        [bytes] AS `protoMap.bytes`,
+        [packets] AS `protoMap.packets`,
+        [flows] AS `protoMap.flows`,
+
+        [tcp_flag] AS `tcpFlagMap.tcp_flag`,
+        [bytes] AS `tcpFlagMap.bytes`,
+        [packets] AS `tcpFlagMap.packets`,
+        [flows] AS `tcpFlagMap.flows`,
+
+        sum(bytes) AS bytes,
+        sum(packets) AS packets,
+        sum(flows) AS flows
+    FROM (
         SELECT
             prefix,
-            time_received,
-            proto,
-            tcp_flag,
+            toStartOfTenMinutes(time_received) AS time_received,
+            proto_str,
+            NumToTcpFlagString(tcp_flag) AS tcp_flag,
             sum(total_bytes) AS bytes,
             sum(total_packets) AS packets,
             count() AS flows
@@ -188,24 +205,6 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_dst_profile_10m_mv TO flow
                 bitAnd(tcp_flags, 64),  -- ECE
                 bitAnd(tcp_flags, 128)  -- CWR
             ]) AS tcp_flag
-        GROUP BY prefix, time_received, proto, tcp_flag
+        GROUP BY prefix, time_received, proto_str, tcp_flag
     )
-    SELECT
-        prefix,
-        time_received,
-
-        [proto] AS `protoMap.proto`,
-        [bytes] AS `protoMap.bytes`,
-        [packets] AS `protoMap.packets`,
-        [flows] AS `protoMap.flows`,
-
-        [tcp_flag] AS `tcpFlagMap.tcp_flag`,
-        [bytes] AS `tcpFlagMap.bytes`,
-        [packets] AS `tcpFlagMap.packets`,
-        [flows] AS `tcpFlagMap.flows`,
-
-        sum(bytes) AS bytes,
-        sum(packets) AS packets,
-        sum(flows) AS flows
-    FROM temp
-    GROUP BY prefix, `protoMap.proto`, `tcpFlagMap.tcp_flag`, time_received;
+    GROUP BY prefix, time_received, proto_str, tcp_flag;
