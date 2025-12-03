@@ -7,9 +7,9 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
             sampling_rate,
             sampler_address,
 
-            time_received_ns,
-            time_flow_start_ns,
-            time_flow_end_ns,
+            toDateTime64(time_received_ns/1000000000, 9) AS time_received,
+            toDateTime64(time_flow_start_ns/1000000000, 9) AS time_flow_start,
+            toDateTime64(time_flow_end_ns/1000000000, 9) AS time_flow_end,
 
             bytes,
             packets,
@@ -52,10 +52,6 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
 
             BytesToIPString(sampler_address) AS sampler_address_str,
 
-            toDateTime64(time_received_ns/1000000000, 9) AS time_received_dt,
-            toDateTime64(time_flow_start_ns/1000000000, 9) AS time_flow_start_dt,
-            toDateTime64(time_flow_end_ns/1000000000, 9) AS time_flow_end_dt,
-
             bytes * if(sampling_rate = 0, flows.routers.default_sampling, sampling_rate) AS total_bytes,
             packets * if(sampling_rate = 0, flows.routers.default_sampling, sampling_rate) AS total_packets,
 
@@ -94,7 +90,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
 --     SELECT
 --         dictGetStringOrDefault('flows.prefixes', 'prefix', toIPv6(dst_addr_str), '') AS prefix,
 
---         toStartOfMinute(time_received_dt) AS time_received,
+--         toStartOfMinute(time_received) AS time_received,
 
 --         sum(total_bytes) AS bytes,
 --         sum(total_packets) AS packets,
@@ -138,7 +134,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_total_1m_mv TO flows.prefi
     SELECT
         arrayJoin(prefixes) AS prefix,
 
-        toStartOfMinute(time_received_dt) AS time_received,
+        toStartOfMinute(time_received) AS time_received,
 
         sum(total_bytes) AS bytes,
         sum(total_packets) AS packets,
@@ -159,7 +155,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_src_profile_10m_mv TO flow
             null
         ) AS network,
 
-        toStartOfTenMinutes(time_received_dt) AS time_received,
+        toStartOfTenMinutes(time_received) AS time_received,
 
         sum(total_bytes) AS bytes,
         sum(total_packets) AS packets,

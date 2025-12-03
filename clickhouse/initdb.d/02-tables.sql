@@ -85,27 +85,72 @@ SETTINGS
     kafka_schema = 'flow.proto:FlowMessage';
 
 
-CREATE TABLE IF NOT EXISTS flows.raw AS flows.kafka_sink
+CREATE TABLE IF NOT EXISTS flows.raw
+(
+    type Int32,
+
+    sequence_num UInt32,
+    sampling_rate UInt64,
+    sampler_address FixedString(16),
+
+    time_received DateTime64(9),
+    time_flow_start DateTime64(9),
+    time_flow_end DateTime64(9),
+
+    bytes UInt64,
+    packets UInt64,
+
+    src_addr FixedString(16),
+    dst_addr FixedString(16),
+
+    etype UInt16,
+    proto UInt8,
+
+    tcp_flags UInt32,
+
+    icmp_type UInt32,
+    icmp_code UInt32,
+
+    src_port UInt16,
+    dst_port UInt16,
+
+    src_as UInt32,
+    dst_as UInt32,
+
+    src_net UInt32,
+    dst_net UInt32,
+
+    next_hop FixedString(16),
+    next_hop_as UInt32,
+
+    bgp_next_hop FixedString(16),
+
+    in_if UInt32,
+    out_if UInt32,
+
+    src_mac UInt64,
+    dst_mac UInt64,
+
+    forwarding_status UInt32,
+
+    observation_domain_id UInt32,
+    observation_point_id UInt32,
+
+    sampler_address_str LowCardinality(String),
+    total_bytes UInt64,
+    total_packets UInt64,
+    src_addr_str String,
+    dst_addr_str String,
+    etype_str LowCardinality(String),
+    proto_str LowCardinality(String),
+    tcp_flags_str LowCardinality(String),
+    forwarding_status_str LowCardinality(String),
+    prefixes Array(LowCardinality(String))
+)
 ENGINE = MergeTree()
-PARTITION BY toDate(toDateTime64(time_received_ns/1000000000, 9))
-ORDER BY time_received_ns
-TTL toDate(toDateTime64(time_received_ns/1000000000, 9)) + INTERVAL 30 DAY;
-
-
-ALTER TABLE flows.raw
-ADD COLUMN sampler_address_str LowCardinality(String),
-ADD COLUMN time_received_dt DateTime64(9),
-ADD COLUMN time_flow_start_dt DateTime64(9),
-ADD COLUMN time_flow_end_dt DateTime64(9),
-ADD COLUMN total_bytes UInt64,
-ADD COLUMN total_packets UInt64,
-ADD COLUMN src_addr_str String,
-ADD COLUMN dst_addr_str String,
-ADD COLUMN etype_str LowCardinality(String),
-ADD COLUMN proto_str LowCardinality(String),
-ADD COLUMN tcp_flags_str LowCardinality(String),
-ADD COLUMN forwarding_status_str LowCardinality(String),
-ADD COLUMN prefixes Array(LowCardinality(String));
+PARTITION BY toDate(time_received)
+ORDER BY time_received
+TTL toDate(time_received) + INTERVAL 30 DAY;
 
 
 CREATE TABLE IF NOT EXISTS flows.prefixes_total_1m

@@ -256,7 +256,7 @@
           "interval": "",
           "intervalFactor": 1,
           "query": "SELECT $timeSeries as t, floor(sum(packets) / $interval) AS bps FROM $table WHERE $timeFilter AND prefix = $prefixes GROUP BY t ORDER BY t",
-          "rawQuery": "/* grafana dashboard=Traffic Prefixes, user=1 */\nSELECT (intDiv(toUInt32(time_flow_start), 60) * 60) * 1000 as t, floor(sum(packets) / 60) AS bps FROM flows.prefixes_total_1m WHERE time_flow_start >= toDateTime(1762621887) AND time_flow_start <= toDateTime(1762636287) AND prefix = '10.12.0.0/16' GROUP BY t ORDER BY t",
+          "rawQuery": "/* grafana dashboard=Traffic Prefixes, user=1 */\nSELECT (intDiv(toUInt32(time_received), 60) * 60) * 1000 as t, floor(sum(packets) / 60) AS bps FROM flows.prefixes_total_1m WHERE time_received >= toDateTime(1762621887) AND time_received <= toDateTime(1762636287) AND prefix = '10.12.0.0/16' GROUP BY t ORDER BY t",
           "refId": "A",
           "round": "0s",
           "showFormattedSQL": true,
