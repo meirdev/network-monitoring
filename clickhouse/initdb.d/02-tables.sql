@@ -200,3 +200,33 @@ ENGINE = SummingMergeTree()
 PARTITION BY toDate(time_received)
 ORDER BY (prefix, network, time_received)
 TTL toDate(time_received) + INTERVAL 7 DAY;
+
+
+CREATE TABLE IF NOT EXISTS flows.prefixes_dst_profile_10m
+(
+    prefix LowCardinality(String),
+
+    time_received DateTime,
+
+    protoMap Nested(
+        proto UInt8,
+        bytes UInt64,
+        packets UInt64,
+        flows UInt64
+    ),
+
+    tcpFlagMap Nested(
+        tcp_flag UInt16,
+        bytes UInt64,
+        packets UInt64,
+        flows UInt64
+    ),
+
+    bytes UInt64,
+    packets UInt64,
+    flows UInt64
+)
+ENGINE = SummingMergeTree()
+PARTITION BY toDate(time_received)
+ORDER BY (prefix, `protoMap.proto`, `tcpFlagMap.tcp_flag`, time_received)
+TTL toDate(time_received) + INTERVAL 7 DAY;

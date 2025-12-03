@@ -163,3 +163,49 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_src_profile_10m_mv TO flow
     FROM flows.raw
     WHERE network IS NOT NULL
     GROUP BY prefix, network, time_received;
+
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_dst_profile_10m_mv TO flows.prefixes_dst_profile_10m AS
+    WITH temp (
+        SELECT
+            prefix,
+            time_received,
+            proto,
+            tcp_flag,
+            sum(total_bytes) AS bytes,
+            sum(total_packets) AS packets,
+            count() AS flows
+        FROM flows.raw
+        ARRAY JOIN prefixes AS prefix
+        LEFT ARRAY JOIN
+            arrayFilter(x -> x != 0, [
+                bitAnd(tcp_flags, 1),   -- FIN
+                bitAnd(tcp_flags, 2),   -- SYN
+                bitAnd(tcp_flags, 4),   -- RST
+                bitAnd(tcp_flags, 8),   -- PSH
+                bitAnd(tcp_flags, 16),  -- ACK
+                bitAnd(tcp_flags, 32),  -- URG
+                bitAnd(tcp_flags, 64),  -- ECE
+                bitAnd(tcp_flags, 128)  -- CWR
+            ]) AS tcp_flag
+        GROUP BY prefix, time_received, proto, tcp_flag
+    )
+    SELECT
+        prefix,
+        time_received,
+
+        [proto] AS `protoMap.proto`,
+        [bytes] AS `protoMap.bytes`,
+        [packets] AS `protoMap.packets`,
+        [flows] AS `protoMap.flows`,
+
+        [tcp_flag] AS `tcpFlagMap.tcp_flag`,
+        [bytes] AS `tcpFlagMap.bytes`,
+        [packets] AS `tcpFlagMap.packets`,
+        [flows] AS `tcpFlagMap.flows`,
+
+        sum(bytes) AS bytes,
+        sum(packets) AS packets,
+        sum(flows) AS flows
+    FROM temp
+    GROUP BY prefix, `protoMap.proto`, `tcpFlagMap.tcp_flag`, time_received;
