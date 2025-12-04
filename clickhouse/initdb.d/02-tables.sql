@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS flows.raw
     sequence_num UInt32,
     sampling_rate UInt64,
 
-    sampler_address FixedString(16),
+    sampler_address UInt128,
     sampler_address_str LowCardinality(String),
 
     time_received DateTime64(9),
@@ -106,10 +106,10 @@ CREATE TABLE IF NOT EXISTS flows.raw
     packets UInt64,
     total_packets UInt64,
 
-    src_addr FixedString(16),
+    src_addr UInt128,
     src_addr_str String,
 
-    dst_addr FixedString(16),
+    dst_addr UInt128,
     dst_addr_str String,
 
     etype UInt16,
@@ -133,10 +133,10 @@ CREATE TABLE IF NOT EXISTS flows.raw
     src_net UInt32,
     dst_net UInt32,
 
-    next_hop FixedString(16),
+    next_hop UInt128,
     next_hop_as UInt32,
 
-    bgp_next_hop FixedString(16),
+    bgp_next_hop UInt128,
 
     in_if UInt32,
     out_if UInt32,

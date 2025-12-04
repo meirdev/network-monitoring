@@ -7,8 +7,8 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
             sequence_num,
             sampling_rate,
 
-            sampler_address,
-            BytesToIPString(sampler_address) AS sampler_address_str,
+            BytesToIPString(fks.sampler_address) AS sampler_address_str,
+            IPStringToNum(sampler_address_str) AS sampler_address,
 
             toDateTime64(time_received_ns/1000000000, 9) AS time_received,
             toDateTime64(time_flow_start_ns/1000000000, 9) AS time_flow_start,
@@ -20,11 +20,11 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
             packets,
             packets * if(sampling_rate = 0, flows.routers.default_sampling, sampling_rate) AS total_packets,
 
-            src_addr,
-            BytesToIPString(src_addr) AS src_addr_str,
+            BytesToIPString(fks.src_addr) AS src_addr_str,
+            IPStringToNum(src_addr_str) AS src_addr,
 
-            dst_addr,
-            BytesToIPString(dst_addr) AS dst_addr_str,
+            BytesToIPString(fks.dst_addr) AS dst_addr_str,
+            IPStringToNum(dst_addr_str) AS dst_addr,
 
             etype,
             NumToETypeString(etype) AS etype_str,
@@ -47,10 +47,11 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
             src_net,
             dst_net,
 
-            next_hop,
+            IPStringToNum(BytesToIPString(next_hop)) AS next_hop,
+
             next_hop_as,
 
-            bgp_next_hop,
+            IPStringToNum(BytesToIPString(bgp_next_hop)) AS bgp_next_hop,
 
             in_if,
             out_if,
@@ -60,22 +61,22 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
 
             forwarding_status,
             -- Fix for Juniper devices with `report-zero-oif-gw-on-discard` enabled:
-            NumToForwardingStatusString(if(empty(next_hop) = 1 AND out_if = 0, 2, forwarding_status)) AS forwarding_status_str,
+            NumToForwardingStatusString(if(empty(fks.next_hop) = 1 AND out_if = 0, 2, forwarding_status)) AS forwarding_status_str,
 
             observation_domain_id,
             observation_point_id
-        FROM flows.kafka_sink
+        FROM flows.kafka_sink fks
         LEFT ANY JOIN flows.routers ON sampler_address_str == flows.routers.router_ip
     ),
     ip_list AS (
-        SELECT DISTINCT IPStringToNum(dst_addr_str) AS ip_num, dst_addr FROM temp
+        SELECT DISTINCT dst_addr FROM temp
     ),
     dst_addr_to_prefixes AS (
         SELECT
             dst_addr,
             groupArray(p.prefix) AS prefixes
         FROM ip_list l, flows.prefixes_range p
-        WHERE l.ip_num BETWEEN p.start AND p.end
+        WHERE dst_addr BETWEEN p.start AND p.end
         GROUP BY dst_addr
     )
     SELECT
