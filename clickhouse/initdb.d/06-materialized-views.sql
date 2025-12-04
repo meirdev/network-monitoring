@@ -2,25 +2,38 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
     WITH temp AS (
         SELECT
             type,
+            NumToFlowTypeString(type) AS type_str, 
 
             sequence_num,
             sampling_rate,
+
             sampler_address,
+            BytesToIPString(sampler_address) AS sampler_address_str,
 
             toDateTime64(time_received_ns/1000000000, 9) AS time_received,
             toDateTime64(time_flow_start_ns/1000000000, 9) AS time_flow_start,
             toDateTime64(time_flow_end_ns/1000000000, 9) AS time_flow_end,
 
             bytes,
+            bytes * if(sampling_rate = 0, flows.routers.default_sampling, sampling_rate) AS total_bytes,
+
             packets,
+            packets * if(sampling_rate = 0, flows.routers.default_sampling, sampling_rate) AS total_packets,
 
             src_addr,
+            BytesToIPString(src_addr) AS src_addr_str,
+
             dst_addr,
+            BytesToIPString(dst_addr) AS dst_addr_str,
 
             etype,
+            NumToETypeString(etype) AS etype_str,
+
             proto,
+            NumToProtoString(proto) AS proto_str,
 
             tcp_flags,
+            NumToTcpFlagsString(tcp_flags) AS tcp_flags_str,
 
             icmp_type,
             icmp_code,
@@ -46,25 +59,11 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
             dst_mac,
 
             forwarding_status,
+            -- Fix for Juniper devices with `report-zero-oif-gw-on-discard` enabled:
+            NumToForwardingStatusString(if(empty(next_hop) = 1 AND out_if = 0, 2, forwarding_status)) AS forwarding_status_str,
 
             observation_domain_id,
-            observation_point_id,
-
-            BytesToIPString(sampler_address) AS sampler_address_str,
-
-            bytes * if(sampling_rate = 0, flows.routers.default_sampling, sampling_rate) AS total_bytes,
-            packets * if(sampling_rate = 0, flows.routers.default_sampling, sampling_rate) AS total_packets,
-
-            BytesToIPString(src_addr) AS src_addr_str,
-            BytesToIPString(dst_addr) AS dst_addr_str,
-
-            NumToETypeString(etype) AS etype_str,
-            NumToProtoString(proto) AS proto_str,
-
-            NumToTcpFlagsString(tcp_flags) AS tcp_flags_str,
-
-            -- Fix for Juniper devices with `report-zero-oif-gw-on-discard` enabled:
-            NumToForwardingStatusString(if(empty(next_hop) = 1 AND out_if = 0, 2, forwarding_status)) AS forwarding_status_str
+            observation_point_id
         FROM flows.kafka_sink
         LEFT ANY JOIN flows.routers ON sampler_address_str == flows.routers.router_ip
     ),

@@ -21,7 +21,7 @@ CREATE FUNCTION IF NOT EXISTS NumToTcpFlagString AS (tcp_flag) ->
 
 CREATE FUNCTION IF NOT EXISTS NumToTcpFlagsString AS (tcp_flags) ->
 (
-    if(tcp_flags = 0, 'EMPTY', arrayStringConcat(arrayMap(x -> transform(x, [1, 2, 4, 8, 16, 32, 64, 128, 256, 512], ['FIN', 'SYN', 'RST', 'PSH', 'ACK', 'URG', 'ECN', 'CWR', 'NONCE', 'RESERVED'], toString(x)), bitmaskToArray(tcp_flags)), '+'))
+    if(tcp_flags = 0, 'EMPTY', arrayStringConcat(arrayMap(x -> NumToTcpFlagString(x), bitmaskToArray(tcp_flags)), '+'))
 );
 
 CREATE FUNCTION IF NOT EXISTS NumToForwardingStatusString AS (forwarding_status) ->

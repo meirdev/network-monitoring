@@ -88,25 +88,38 @@ SETTINGS
 CREATE TABLE IF NOT EXISTS flows.raw
 (
     type Int32,
+    type_str LowCardinality(String),
 
     sequence_num UInt32,
     sampling_rate UInt64,
+
     sampler_address FixedString(16),
+    sampler_address_str LowCardinality(String),
 
     time_received DateTime64(9),
     time_flow_start DateTime64(9),
     time_flow_end DateTime64(9),
 
     bytes UInt64,
+    total_bytes UInt64,
+
     packets UInt64,
+    total_packets UInt64,
 
     src_addr FixedString(16),
+    src_addr_str String,
+
     dst_addr FixedString(16),
+    dst_addr_str String,
 
     etype UInt16,
+    etype_str LowCardinality(String),
+
     proto UInt8,
+    proto_str LowCardinality(String),
 
     tcp_flags UInt32,
+    tcp_flags_str LowCardinality(String),
 
     icmp_type UInt32,
     icmp_code UInt32,
@@ -132,19 +145,11 @@ CREATE TABLE IF NOT EXISTS flows.raw
     dst_mac UInt64,
 
     forwarding_status UInt32,
+    forwarding_status_str LowCardinality(String),
 
     observation_domain_id UInt32,
     observation_point_id UInt32,
-
-    sampler_address_str LowCardinality(String),
-    total_bytes UInt64,
-    total_packets UInt64,
-    src_addr_str String,
-    dst_addr_str String,
-    etype_str LowCardinality(String),
-    proto_str LowCardinality(String),
-    tcp_flags_str LowCardinality(String),
-    forwarding_status_str LowCardinality(String),
+    
     prefixes Array(LowCardinality(String))
 )
 ENGINE = MergeTree()
