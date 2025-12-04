@@ -29,9 +29,9 @@ CREATE FUNCTION IF NOT EXISTS NumToForwardingStatusString AS (forwarding_status)
     transform(if(forwarding_status >= 64, bitShiftRight(forwarding_status, 7), forwarding_status), [0, 1, 2, 3], ['UNKNOWN', 'FORWARDED', 'DROPPED', 'CONSUMED'], toString(forwarding_status))
 );
 
-CREATE FUNCTION IF NOT EXISTS IPStringToNum AS (ip) ->
+CREATE FUNCTION IF NOT EXISTS BytesToIPNum AS (addr) ->
 (
-    if(isIPv4String(ip) = 1, toUInt128(IPv4StringToNumOrNull(ip)), reinterpretAsUInt128(reverse(IPv6StringToNumOrNull(dst_addr_str))))
+    if(reinterpretAsUInt128(substring(reverse(addr), 1, 12)) = 0, reinterpretAsUInt32(substring(reverse(addr), 13, 4)), reinterpretAsUInt128(reverse(addr)))
 );
 
 CREATE FUNCTION IF NOT EXISTS NumToProtoString AS (proto) ->

@@ -8,7 +8,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
             sampling_rate,
 
             BytesToIPString(fks.sampler_address) AS sampler_address_str,
-            IPStringToNum(sampler_address_str) AS sampler_address,
+            BytesToIPNum(fks.sampler_address) AS sampler_address,
 
             toDateTime64(time_received_ns/1000000000, 9) AS time_received,
             toDateTime64(time_flow_start_ns/1000000000, 9) AS time_flow_start,
@@ -21,10 +21,10 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
             packets * if(sampling_rate = 0, flows.routers.default_sampling, sampling_rate) AS total_packets,
 
             BytesToIPString(fks.src_addr) AS src_addr_str,
-            IPStringToNum(src_addr_str) AS src_addr,
+            BytesToIPNum(fks.src_addr) AS src_addr,
 
             BytesToIPString(fks.dst_addr) AS dst_addr_str,
-            IPStringToNum(dst_addr_str) AS dst_addr,
+            BytesToIPNum(fks.dst_addr) AS dst_addr,
 
             etype,
             NumToETypeString(etype) AS etype_str,
@@ -47,11 +47,11 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
             src_net,
             dst_net,
 
-            IPStringToNum(BytesToIPString(next_hop)) AS next_hop,
+            BytesToIPNum(next_hop) AS next_hop,
 
             next_hop_as,
 
-            IPStringToNum(BytesToIPString(bgp_next_hop)) AS bgp_next_hop,
+            BytesToIPNum(bgp_next_hop) AS bgp_next_hop,
 
             in_if,
             out_if,
