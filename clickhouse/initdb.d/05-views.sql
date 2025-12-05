@@ -76,3 +76,47 @@ CREATE VIEW IF NOT EXISTS flows.dynamic_threshold_alerts_vw AS (
     INNER JOIN threshold_rules r ON pm.prefix = r.prefix
     WHERE bandwidth_alert OR packet_alert
 );
+
+
+CREATE VIEW IF NOT EXISTS flows.advanced_ddos_alerts_vw AS (
+    WITH
+        toDateTime({date:DateTime}) AS datetime_rounded,
+        transform({sensitivity:String}, ['low', 'medium', 'high'], [3.0, 2.0, 1.5], 1.5) AS sensitivity_value,
+        threshold_rules AS (
+            SELECT
+                id,
+                arrayJoin(prefixes) AS prefix
+            FROM flows.rules
+            WHERE type = 'advanced_ddos'
+        ),
+        prefixes_proto_1d AS (
+            SELECT
+            	prefix,
+                proto,
+                floor(avg(p95_bytes)) * 8 / 60 AS avg_bps,
+                floor(avg(p95_packets)) / 60 AS avg_pps,
+                floor(avg(p95_flows)) / 60 AS avg_fps
+            FROM flows.prefixes_proto_profile_1d
+            WHERE 
+                time_received BETWEEN datetime_rounded - INTERVAL 7 DAY AND datetime_rounded
+                AND prefix IN (SELECT prefix FROM threshold_rules)
+            GROUP BY prefix, proto
+        )
+        SELECT
+        	p1m.time_received AS time_received,
+        	p1m.prefix AS prefix,
+            p1m.`protoMap.proto` AS proto,
+            p1m.`protoMap.bytes` * 8 / 60 >= avg_bps * sensitivity_value AS alert_bps,
+            p1m.`protoMap.packets` / 60 >= avg_pps * sensitivity_value AS alert_pps,
+            p1m.`protoMap.flows` / 60 >= avg_fps * sensitivity_value AS alert_fps
+        FROM flows.prefixes_proto_profile_1m p1m FINAL
+        ARRAY JOIN
+            protoMap.proto,
+            protoMap.bytes,
+            protoMap.packets,
+            protoMap.flows
+        INNER ANY JOIN prefixes_proto_1d p1d ON (p1m.prefix = p1d.prefix AND p1m.`protoMap.proto` = p1d.proto)
+        WHERE 
+            p1m.time_received BETWEEN datetime_rounded - INTERVAL 1 MINUTE AND datetime_rounded AND
+            (alert_bps OR alert_pps OR alert_fps)
+);
