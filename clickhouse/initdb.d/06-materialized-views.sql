@@ -170,19 +170,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_src_profile_10m_mv TO flow
 
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_proto_profile_1m_mv TO flows.prefixes_proto_profile_1m AS
-    SELECT
-        prefix,
-        time_received,
-
-        [proto] AS `protoMap.proto`,
-        [bytes] AS `protoMap.bytes`,
-        [packets] AS `protoMap.packets`,
-        [flows] AS `protoMap.flows`,
-
-        sum(bytes) AS bytes,
-        sum(packets) AS packets,
-        sum(flows) AS flows
-    FROM (
+    WITH classified_flows AS (
         SELECT
             prefix,
             toStartOfMinute(time_received) AS time_received,
@@ -194,6 +182,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_proto_profile_1m_mv TO flo
         ARRAY JOIN prefixes AS prefix
         LEFT ARRAY JOIN
             arrayMap(x -> x.2, arrayFilter(x -> x.1, [
+                (true, 'general'),
                 (proto = 0, 'hopopt'),
                 (proto = 6, 'tcp'),
                 (proto = 17, 'udp'),
@@ -206,4 +195,13 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_proto_profile_1m_mv TO flo
             ])) AS proto
         GROUP BY prefix, time_received, proto
     )
+    SELECT
+        prefix,
+        time_received,
+
+        [proto] AS `protoMap.proto`,
+        [sum(bytes)] AS `protoMap.bytes`,
+        [sum(packets)] AS `protoMap.packets`,
+        [sum(flows)] AS `protoMap.flows`
+    FROM classified_flows
     GROUP BY prefix, time_received, proto;

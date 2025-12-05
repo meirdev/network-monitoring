@@ -226,11 +226,7 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_proto_profile_1m
         bytes UInt64,
         packets UInt64,
         flows UInt64
-    ),
-
-    bytes UInt64,
-    packets UInt64,
-    flows UInt64
+    )
 )
 ENGINE = SummingMergeTree()
 PARTITION BY toDate(time_received)
