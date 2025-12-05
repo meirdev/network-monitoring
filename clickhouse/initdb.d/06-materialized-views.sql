@@ -32,6 +32,10 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
             proto,
             NumToProtoString(proto) AS proto_str,
 
+            ip_tos,
+            ip_ttl,
+            ip_flags,
+
             tcp_flags,
             NumToTcpFlagsString(tcp_flags) AS tcp_flags_str,
 

@@ -45,6 +45,10 @@ CREATE TABLE IF NOT EXISTS flows.kafka_sink
     etype UInt32,
     proto UInt32,
 
+    ip_tos UInt32,
+    ip_ttl UInt32,
+    ip_flags UInt32,
+
     tcp_flags UInt32,
 
     icmp_type UInt32,
@@ -117,6 +121,10 @@ CREATE TABLE IF NOT EXISTS flows.raw
 
     proto UInt8,
     proto_str LowCardinality(String),
+
+    ip_tos UInt32,
+    ip_ttl UInt32,
+    ip_flags UInt32,
 
     tcp_flags UInt32,
     tcp_flags_str LowCardinality(String),
