@@ -240,7 +240,7 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_proto_profile_1d
 
     time_received DateTime,
 
-    proto,
+    proto LowCardinality(String),
 
     p95_bytes UInt64,
     p95_packets UInt64,
