@@ -199,6 +199,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_proto_profile_1m_mv TO flo
                 (proto = 17, 'udp'),
                 (proto = 47, 'gre'),
                 (proto = 50, 'esp'),
+                ((etype = 0x0800 AND proto = 1) OR (etype = 0x86dd AND proto = 58), 'icmp'),
                 (proto = 6 AND bitAnd(tcp_flags, 0x02) = 0x02, 'tcp_syn'),
                 (proto = 6 AND bitAnd(tcp_flags, 0x04) = 0x04, 'tcp_rst'),
                 (proto = 6 AND bitAnd(tcp_flags, 0x10) = 0x10, 'tcp_ack')
