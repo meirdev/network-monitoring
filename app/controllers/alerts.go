@@ -27,3 +27,13 @@ func (c *AlertController) GetThresholdAlerts(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, common.NewResponseSuccess(result))
 }
+
+func (c *AlertController) GetDDoSAlerts(ctx *gin.Context) {
+	result, err := c.AlertService.GetDDoSAlerts(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, common.NewResponseWithError(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, common.NewResponseSuccess(result))
+}

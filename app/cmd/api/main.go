@@ -101,6 +101,7 @@ func main() {
 	alertsGroup := router.Group("/alerts")
 	{
 		alertsGroup.GET("/thresholds", alertController.GetThresholdAlerts)
+		alertsGroup.GET("/ddos", alertController.GetDDoSAlerts)
 	}
 
 	log.Println("Starting server on", listenAddr)
