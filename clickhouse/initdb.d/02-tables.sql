@@ -232,3 +232,25 @@ ENGINE = SummingMergeTree()
 PARTITION BY toDate(time_received)
 ORDER BY (prefix, time_received)
 TTL toDate(time_received) + INTERVAL 7 DAY;
+
+
+CREATE TABLE IF NOT EXISTS flows.prefixes_proto_profile_1d
+(
+    prefix LowCardinality(String),
+
+    time_received DateTime,
+
+    proto,
+
+    p95_bytes UInt64,
+    p95_packets UInt64,
+    p95_flows UInt64,
+
+    max_bytes UInt64,
+    max_packets UInt64,
+    max_flows UInt64
+)
+ENGINE = SummingMergeTree()
+PARTITION BY toDate(time_received)
+ORDER BY (prefix, proto, time_received)
+TTL toDate(time_received) + INTERVAL 7 DAY;

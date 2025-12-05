@@ -205,3 +205,37 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_proto_profile_1m_mv TO flo
         [sum(flows)] AS `protoMap.flows`
     FROM classified_flows
     GROUP BY prefix, time_received, proto;
+
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_proto_profile_1d_mv
+REFRESH EVERY 1 DAY APPEND TO flows.prefixes_proto_profile_1d AS
+    WITH agg_flows AS (
+        SELECT
+            prefix,
+            time_received,
+            `protoMap.proto`,
+            `protoMap.bytes`,
+            `protoMap.packets`,
+            `protoMap.flows`
+        FROM flows.prefixes_proto_profile_1m
+        ARRAY JOIN
+            protoMap.proto,
+            protoMap.bytes,
+            protoMap.packets,
+            protoMap.flows
+        WHERE time_received >= NOW() - INTERVAL 1 DAY
+    )
+    SELECT
+        prefix,
+        toStartOfDay(time_received) AS time_received,
+        `protoMap.proto` AS proto,
+
+        quantile(0.95)(`protoMap.bytes`) AS p95_bytes,
+        quantile(0.95)(`protoMap.packets`) AS p95_packets,
+        quantile(0.95)(`protoMap.flows`) AS p95_flows,
+
+        max(`protoMap.bytes`) AS max_bytes,
+        max(`protoMap.packets`) AS max_packets,
+        max(`protoMap.flows`) AS max_flows
+    FROM agg_flows
+    GROUP BY prefix, time_received, `protoMap.proto`;
