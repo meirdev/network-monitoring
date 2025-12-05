@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_proto_profile_1d
     max_packets UInt64,
     max_flows UInt64
 )
-ENGINE = SummingMergeTree()
+ENGINE = MergeTree()
 PARTITION BY toDate(time_received)
 ORDER BY (prefix, proto, time_received)
 TTL toDate(time_received) + INTERVAL 7 DAY;
