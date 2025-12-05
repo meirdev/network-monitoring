@@ -185,7 +185,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_proto_profile_1m_mv TO flo
     FROM (
         SELECT
             prefix,
-            toStartOfTenMinutes(time_received) AS time_received,
+            toStartOfMinute(time_received) AS time_received,
             proto,
             sum(total_bytes) AS bytes,
             sum(total_packets) AS packets,
