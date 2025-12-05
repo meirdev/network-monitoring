@@ -200,9 +200,9 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_proto_profile_1m_mv TO flo
         time_received,
 
         [proto] AS `protoMap.proto`,
-        [sum(bytes)] AS `protoMap.bytes`,
-        [sum(packets)] AS `protoMap.packets`,
-        [sum(flows)] AS `protoMap.flows`
+        [bytes] AS `protoMap.bytes`,
+        [packets] AS `protoMap.packets`,
+        [flows] AS `protoMap.flows`
     FROM classified_flows
     GROUP BY prefix, time_received, proto;
 
