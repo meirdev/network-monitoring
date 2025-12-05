@@ -165,20 +165,15 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_src_profile_10m_mv TO flow
     GROUP BY prefix, network, time_received;
 
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_dst_profile_10m_mv TO flows.prefixes_dst_profile_10m AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_proto_profile_1m_mv TO flows.prefixes_proto_profile_1m AS
     SELECT
         prefix,
         time_received,
 
-        [proto_str] AS `protoMap.proto`,
+        [proto] AS `protoMap.proto`,
         [bytes] AS `protoMap.bytes`,
         [packets] AS `protoMap.packets`,
         [flows] AS `protoMap.flows`,
-
-        [tcp_flag] AS `tcpFlagMap.tcp_flag`,
-        [bytes] AS `tcpFlagMap.bytes`,
-        [packets] AS `tcpFlagMap.packets`,
-        [flows] AS `tcpFlagMap.flows`,
 
         sum(bytes) AS bytes,
         sum(packets) AS packets,
@@ -187,24 +182,23 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_dst_profile_10m_mv TO flow
         SELECT
             prefix,
             toStartOfTenMinutes(time_received) AS time_received,
-            proto_str,
-            NumToTcpFlagString(tcp_flag) AS tcp_flag,
+            proto,
             sum(total_bytes) AS bytes,
             sum(total_packets) AS packets,
             count() AS flows
         FROM flows.raw
         ARRAY JOIN prefixes AS prefix
         LEFT ARRAY JOIN
-            arrayFilter(x -> x != 0, [
-                bitAnd(tcp_flags, 1),   -- FIN
-                bitAnd(tcp_flags, 2),   -- SYN
-                bitAnd(tcp_flags, 4),   -- RST
-                bitAnd(tcp_flags, 8),   -- PSH
-                bitAnd(tcp_flags, 16),  -- ACK
-                bitAnd(tcp_flags, 32),  -- URG
-                bitAnd(tcp_flags, 64),  -- ECE
-                bitAnd(tcp_flags, 128)  -- CWR
-            ]) AS tcp_flag
-        GROUP BY prefix, time_received, proto_str, tcp_flag
+            arrayMap(x -> x.2, arrayFilter(x -> x.1, [
+                (proto = 0, 'hopopt'),
+                (proto = 6, 'tcp'),
+                (proto = 17, 'udp'),
+                (proto = 47, 'gre'),
+                (proto = 50, 'esp'),
+                (proto = 6 AND bitAnd(tcp_flags, 0x02) = 0x02, 'tcp_syn'),
+                (proto = 6 AND bitAnd(tcp_flags, 0x04) = 0x04, 'tcp_rst'),
+                (proto = 6 AND bitAnd(tcp_flags, 0x10) = 0x10, 'tcp_ack')
+            ])) AS proto
+        GROUP BY prefix, time_received, proto
     )
-    GROUP BY prefix, time_received, proto_str, tcp_flag;
+    GROUP BY prefix, time_received, proto;

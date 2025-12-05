@@ -207,7 +207,7 @@ ORDER BY (prefix, network, time_received)
 TTL toDate(time_received) + INTERVAL 7 DAY;
 
 
-CREATE TABLE IF NOT EXISTS flows.prefixes_dst_profile_10m
+CREATE TABLE IF NOT EXISTS flows.prefixes_proto_profile_1m
 (
     prefix LowCardinality(String),
 
@@ -215,13 +215,6 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_dst_profile_10m
 
     protoMap Nested(
         proto String,
-        bytes UInt64,
-        packets UInt64,
-        flows UInt64
-    ),
-
-    tcpFlagMap Nested(
-        tcp_flag String,
         bytes UInt64,
         packets UInt64,
         flows UInt64
