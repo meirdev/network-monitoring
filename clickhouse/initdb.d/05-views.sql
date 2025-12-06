@@ -93,9 +93,9 @@ CREATE VIEW IF NOT EXISTS flows.advanced_ddos_alerts_vw AS (
             SELECT
             	prefix,
                 proto,
-                floor(exponentialTimeDecayedAvg(86400)(p95_bytes, toUnixTimestamp(time_received))) * 8 / 60 AS avg_bps,
-                floor(exponentialTimeDecayedAvg(86400)(p95_packets, toUnixTimestamp(time_received))) / 60 AS avg_pps,
-                floor(exponentialTimeDecayedAvg(86400)(p95_flows, toUnixTimestamp(time_received))) / 60 AS avg_fps
+                floor(avg(p95_bytes)) * 8 / 60 AS avg_bps,
+                floor(avg(p95_packets)) / 60 AS avg_pps,
+                floor(avg(p95_flows)) / 60 AS avg_fps
             FROM flows.prefixes_proto_profile_1d
             WHERE
                 time_received BETWEEN datetime_rounded - INTERVAL 7 DAY AND datetime_rounded
