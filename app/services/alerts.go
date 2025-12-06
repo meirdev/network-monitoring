@@ -18,11 +18,19 @@ type ThresholdAlert struct {
 }
 
 type DDoSAlert struct {
-	Id                    string `ch:"id" json:"id"`
-	Name                  string `ch:"name" json:"name"`
-	BitsPerSecondAlert    bool   `ch:"bps_alert" json:"bps_alert"`
-	PacketsPerSecondAlert bool   `ch:"pps_alert" json:"pps_alert"`
-	FlowsPerSecondAlert   bool   `ch:"fps_alert" json:"fps_alert"`
+	Id           string  `ch:"id" json:"id"`
+	Name         string  `ch:"name" json:"name"`
+	Prefix       string  `ch:"prefix" json:"prefix"`
+	Proto        string  `ch:"proto" json:"proto"`
+	CurrentBPS   float64 `ch:"current_bps" json:"current_bps"`
+	CurrentPPS   float64 `ch:"current_pps" json:"current_pps"`
+	CurrentFPS   float64 `ch:"current_fps" json:"current_fps"`
+	RecommendBPS float64 `ch:"recommend_bps" json:"recommend_bps"`
+	RecommendPPS float64 `ch:"recommend_pps" json:"recommend_pps"`
+	RecommendFPS float64 `ch:"recommend_fps" json:"recommend_fps"`
+	BPSAlert     bool    `ch:"bps_alert" json:"bps_alert"`
+	PPSAlert     bool    `ch:"pps_alert" json:"pps_alert"`
+	FPSAlert     bool    `ch:"fps_alert" json:"fps_alert"`
 }
 
 type AlertService struct {
@@ -72,10 +80,22 @@ func (s *AlertService) GetThresholdAlerts(ctx context.Context) (*[]ThresholdAler
 
 func (s *AlertService) GetDDoSAlerts(ctx context.Context) (*[]DDoSAlert, error) {
 	query := `
-	WITH alerts AS (
-		SELECT id, bps_alert, pps_alert, fps_alert FROM flows.advanced_ddos_alerts_vw(date=now(), sensitivity='high')
-	)
-	SELECT id, name, bps_alert, pps_alert, fps_alert FROM alerts LEFT JOIN flows.rules USING id
+	SELECT
+		id,
+		name,
+		prefix,
+		proto,
+		current_bps,
+		current_pps,
+		current_fps,
+		recommend_bps,
+		recommend_pps,
+		recommend_fps,
+		bps_alert,
+		pps_alert,
+		fps_alert
+	FROM flows.advanced_ddos_alerts_vw(date=now(), sensitivity='high')
+	LEFT JOIN flows.rules USING id
 	`
 
 	chCtx := clickhouse.Context(ctx)

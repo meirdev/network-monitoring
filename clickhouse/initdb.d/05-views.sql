@@ -93,22 +93,29 @@ CREATE VIEW IF NOT EXISTS flows.advanced_ddos_alerts_vw AS (
             SELECT
             	prefix,
                 proto,
-                floor(avg(p95_bytes)) * 8 / 60 AS avg_bps,
-                floor(avg(p95_packets)) / 60 AS avg_pps,
-                floor(avg(p95_flows)) / 60 AS avg_fps
+                floor(exponentialTimeDecayedAvg(86400)(p95_bytes, toUnixTimestamp(time_received))) * 8 / 60 AS avg_bps,
+                floor(exponentialTimeDecayedAvg(86400)(p95_packets, toUnixTimestamp(time_received))) / 60 AS avg_pps,
+                floor(exponentialTimeDecayedAvg(86400)(p95_flows, toUnixTimestamp(time_received))) / 60 AS avg_fps
             FROM flows.prefixes_proto_profile_1d
-            WHERE 
+            WHERE
                 time_received BETWEEN datetime_rounded - INTERVAL 7 DAY AND datetime_rounded
                 AND prefix IN (SELECT prefix FROM threshold_rules)
             GROUP BY prefix, proto
         )
         SELECT
+            r.id AS id,
         	p1m.time_received AS time_received,
         	p1m.prefix AS prefix,
             p1m.`protoMap.proto` AS proto,
-            p1m.`protoMap.bytes` * 8 / 60 >= avg_bps * sensitivity_value AS alert_bps,
-            p1m.`protoMap.packets` / 60 >= avg_pps * sensitivity_value AS alert_pps,
-            p1m.`protoMap.flows` / 60 >= avg_fps * sensitivity_value AS alert_fps
+            p1m.`protoMap.bytes` * 8 / 60 AS current_bps,
+            p1m.`protoMap.packets` / 60 AS current_pps,
+            p1m.`protoMap.flows` / 60 AS current_fps,
+            avg_bps * sensitivity_value AS recommend_bps,
+            avg_pps * sensitivity_value AS recommend_pps,
+            avg_fps * sensitivity_value AS recommend_fps,
+            current_bps >= recommend_bps AS bps_alert,
+            current_pps >= recommend_pps AS pps_alert,
+            current_fps >= recommend_fps AS fps_alert
         FROM flows.prefixes_proto_profile_1m p1m FINAL
         ARRAY JOIN
             protoMap.proto,
@@ -116,7 +123,8 @@ CREATE VIEW IF NOT EXISTS flows.advanced_ddos_alerts_vw AS (
             protoMap.packets,
             protoMap.flows
         INNER ANY JOIN prefixes_proto_1d p1d ON (p1m.prefix = p1d.prefix AND p1m.`protoMap.proto` = p1d.proto)
+        INNER JOIN threshold_rules r ON p1m.prefix = r.prefix
         WHERE 
             p1m.time_received BETWEEN datetime_rounded - INTERVAL 1 MINUTE AND datetime_rounded AND
-            (alert_bps OR alert_pps OR alert_fps)
+            (bps_alert OR pps_alert OR fps_alert)
 );
