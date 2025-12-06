@@ -12,7 +12,7 @@ type Rule struct {
 	Id                 string   `ch:"id" json:"id"`
 	Name               string   `ch:"name" json:"name" binding:"required,max=256"`
 	Prefixes           []string `ch:"prefixes" json:"prefixes" binding:"required,dive,cidr"`
-	Type               string   `ch:"type" json:"type" binding:"required,oneof=threshold zscore"`
+	Type               string   `ch:"type" json:"type" binding:"required,oneof=threshold zscore advanced_ddos"`
 	BandwidthThreshold *uint64  `ch:"bandwidth_threshold" json:"bandwidth_threshold" binding:"omitempty,min=1"`
 	PacketThreshold    *uint64  `ch:"packet_threshold" json:"packet_threshold" binding:"omitempty,min=1"`
 	Duration           *uint64  `ch:"duration" json:"duration" binding:"omitempty,min=1,required_if=type threshold"`
