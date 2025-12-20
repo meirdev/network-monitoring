@@ -20,17 +20,20 @@ CREATE VIEW IF NOT EXISTS flows.static_threshold_alerts_vw AS (
         )
     SELECT
         r.id,
+        r.prefix,
         any(r.bandwidth_threshold) IS NOT NULL AND
             countIf(pm.bytes * 8 / 60 >= r.bandwidth_threshold 
                 AND pm.time_received >= datetime_rounded - toIntervalMinute(r.duration)) 
             = countIf(pm.time_received >= datetime_rounded - toIntervalMinute(r.duration)) AS bandwidth_alert,
+        max(pm.bytes * 8 / 60) AS peak_bps,
         any(r.packet_threshold) IS NOT NULL AND 
             countIf(pm.packets / 60 >= r.packet_threshold 
                 AND pm.time_received >= datetime_rounded - toIntervalMinute(r.duration)) 
-            = countIf(pm.time_received >= datetime_rounded - toIntervalMinute(r.duration)) AS packet_alert
+            = countIf(pm.time_received >= datetime_rounded - toIntervalMinute(r.duration)) AS packet_alert,
+        max(pm.packets / 60) AS peak_pps
     FROM prefixes_1m pm
     INNER JOIN threshold_rules r ON pm.prefix = r.prefix
-    GROUP BY r.id
+    GROUP BY r.id, r.prefix
     HAVING bandwidth_alert OR packet_alert
 );
 
@@ -53,9 +56,11 @@ CREATE VIEW IF NOT EXISTS flows.dynamic_threshold_alerts_vw AS (
             SELECT
                 prefix,
                 avgIf(bytes * 8 / 60, time_received >= short_win) AS short_avg_bps,
+                maxIf(bytes * 8 / 60, time_received >= short_win) AS peak_bps,
                 avg(bytes * 8 / 60) AS long_avg_bps,
                 stddevPopStable(bytes * 8 / 60) AS long_stddev_bps,
                 avgIf(packets / 60, time_received >= short_win) AS short_avg_pps,
+                maxIf(packets / 60, time_received >= short_win) AS peak_pps,
                 avg(packets / 60) AS long_avg_pps,
                 stddevPopStable(packets / 60) AS long_stddev_pps
             FROM flows.prefixes_total_1m FINAL
@@ -66,12 +71,15 @@ CREATE VIEW IF NOT EXISTS flows.dynamic_threshold_alerts_vw AS (
         )
     SELECT
         r.id,
+        r.prefix,
         if(r.zscore_target = 'bandwidth' AND pm.long_stddev_bps > 0,
         (pm.short_avg_bps - pm.long_avg_bps) / pm.long_stddev_bps >= SensitivityLevelToZScore(r.zscore_sensitivity),
         false) AS bandwidth_alert,
+        peak_bps,
         if(r.zscore_target = 'packets' AND pm.long_stddev_pps > 0,
         (pm.short_avg_pps - pm.long_avg_pps) / pm.long_stddev_pps >= SensitivityLevelToZScore(r.zscore_sensitivity),
-        false) AS packet_alert
+        false) AS packet_alert,
+        peak_pps
     FROM prefixes_1m pm
     INNER JOIN threshold_rules r ON pm.prefix = r.prefix
     WHERE bandwidth_alert OR packet_alert

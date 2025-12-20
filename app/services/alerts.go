@@ -11,10 +11,13 @@ import (
 const MaxDuration = 60
 
 type ThresholdAlert struct {
-	Id             string `ch:"id" json:"id"`
-	Name           string `ch:"name" json:"name"`
-	BandwidthAlert bool   `ch:"bandwidth_alert" json:"bandwidth_alert"`
-	PacketAlert    bool   `ch:"packet_alert" json:"packet_alert"`
+	Id             string  `ch:"id" json:"id"`
+	Name           string  `ch:"name" json:"name"`
+	Prefix         string  `ch:"prefix" json:"prefix"`
+	PeakBPS        float64 `ch:"peak_bps" json:"peak_bps"`
+	PeakPPS        float64 `ch:"peak_pps" json:"peak_pps"`
+	BandwidthAlert bool    `ch:"bandwidth_alert" json:"bandwidth_alert"`
+	PacketAlert    bool    `ch:"packet_alert" json:"packet_alert"`
 }
 
 type DDoSAlert struct {
@@ -46,11 +49,11 @@ func NewAlertService(conn driver.Conn) *AlertService {
 func (s *AlertService) GetThresholdAlerts(ctx context.Context) (*[]ThresholdAlert, error) {
 	query := `
 	WITH alerts AS (
-		SELECT id, bandwidth_alert, packet_alert FROM flows.static_threshold_alerts_vw(date=now(), max_duration={max_duration:UInt64})
+		SELECT id, prefix, peak_bps, peak_pps, bandwidth_alert, packet_alert FROM flows.static_threshold_alerts_vw(date=now(), max_duration={max_duration:UInt64})
 		UNION ALL
-		SELECT id, bandwidth_alert, packet_alert FROM flows.dynamic_threshold_alerts_vw(date=now())
+		SELECT id, prefix, peak_bps, peak_pps, bandwidth_alert, packet_alert FROM flows.dynamic_threshold_alerts_vw(date=now())
 	)
-	SELECT id, name, toBool(bandwidth_alert) AS bandwidth_alert, toBool(packet_alert) AS packet_alert FROM alerts LEFT JOIN flows.rules USING id
+	SELECT id, name, prefix, peak_bps, peak_pps, toBool(bandwidth_alert) AS bandwidth_alert, toBool(packet_alert) AS packet_alert FROM alerts LEFT JOIN flows.rules USING id
 	`
 
 	chCtx := clickhouse.Context(ctx, clickhouse.WithParameters(clickhouse.Parameters{
