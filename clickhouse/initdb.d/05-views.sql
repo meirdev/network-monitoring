@@ -20,7 +20,7 @@ CREATE VIEW IF NOT EXISTS flows.static_threshold_alerts_vw AS (
         )
     SELECT
         r.id,
-        r.prefix,
+        r.prefix AS prefix,
         any(r.bandwidth_threshold) IS NOT NULL AND
             countIf(pm.bytes * 8 / 60 >= r.bandwidth_threshold 
                 AND pm.time_received >= datetime_rounded - toIntervalMinute(r.duration)) 
@@ -71,7 +71,7 @@ CREATE VIEW IF NOT EXISTS flows.dynamic_threshold_alerts_vw AS (
         )
     SELECT
         r.id,
-        r.prefix,
+        r.prefix AS prefix,
         if(r.zscore_target = 'bandwidth' AND pm.long_stddev_bps > 0,
         (pm.short_avg_bps - pm.long_avg_bps) / pm.long_stddev_bps >= SensitivityLevelToZScore(r.zscore_sensitivity),
         false) AS bandwidth_alert,
