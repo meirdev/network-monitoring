@@ -107,7 +107,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.raw_mv TO flows.raw AS
 CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_range_mv
 REFRESH EVERY 1 MINUTE TO flows.prefixes_range AS
     WITH split_prefix AS (
-        SELECT
+        SELECT DISTINCT
             arrayJoin(prefixes) AS prefix,
             splitByChar('/', prefix) AS ip_mask,
             ip_mask[1] AS ip,
