@@ -7,7 +7,7 @@ fi
 
 alert_command="$1"
 
-query_result=$(curl http://localhost:8090/alerts/thresholds)
+query_result=$(curl -sS http://localhost:8090/alerts/thresholds)
 
 alerts_length=$(echo $query_result | jq '.result | length')
 
