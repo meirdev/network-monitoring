@@ -86,7 +86,7 @@ CREATE VIEW IF NOT EXISTS flows.dynamic_threshold_alerts_vw AS (
         computed_alerts AS (
             SELECT
                 r.id,
-                r.prefix,
+                r.prefix AS prefix,
                 r.zscore_target,
                 ps.short_max_bps AS peak_bps,
                 ps.short_max_pps AS peak_pps,
@@ -103,7 +103,7 @@ CREATE VIEW IF NOT EXISTS flows.dynamic_threshold_alerts_vw AS (
     SELECT
         id,
         prefix,
-        zscore_target = 'bandwidth' AND bps_zscore >= threshold_zscore AS bandwidth_alert,
+        zscore_target = 'bits' AND bps_zscore >= threshold_zscore AS bandwidth_alert,
         peak_bps,
         zscore_target = 'packets' AND pps_zscore >= threshold_zscore AS packet_alert,
         peak_pps
