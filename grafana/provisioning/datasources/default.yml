@@ -16,3 +16,14 @@ datasources:
       tlsSkipVerify: true
     secureJsonData:
       basicAuthPassword: password
+
+  - name: ClickHouse-2
+    type: grafana-clickhouse-datasource
+    jsonData:
+      defaultDatabase: default
+      port: 9000
+      host: db
+      tlsSkipVerify: false
+      username: default
+    secureJsonData:
+      password: password
