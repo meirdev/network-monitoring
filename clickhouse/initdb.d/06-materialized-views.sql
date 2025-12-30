@@ -239,3 +239,42 @@ REFRESH EVERY 1 DAY APPEND TO flows.prefixes_proto_profile_1d AS
         max(`protoMap.flows`) AS max_flows
     FROM agg_flows
     GROUP BY prefix, time_received, `protoMap.proto`;
+
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS flows.threshold_alerts_mv
+REFRESH EVERY 60 SECOND APPEND TO flows.threshold_alerts AS
+    WITH
+        now() AS current_time,
+        alerts AS (
+            SELECT
+                id,
+                'threshold' AS type,
+                prefix,
+                peak_bps,
+                peak_pps,
+                bandwidth_alert,
+                packet_alert
+            FROM flows.static_threshold_alerts_vw(date=current_time, max_duration=60)
+            UNION ALL
+            SELECT
+                id,
+                'zscore' AS type,
+                prefix,
+                peak_bps,
+                peak_pps,
+                bandwidth_alert,
+                packet_alert
+            FROM flows.dynamic_threshold_alerts_vw(date=current_time)
+        )
+    SELECT
+        a.id AS rule_id,
+        r.name AS rule_name,
+        a.type AS alert_type,
+        a.prefix,
+        current_time AS alert_time,
+        a.peak_bps,
+        a.peak_pps,
+        a.bandwidth_alert AS is_bandwidth_alert,
+        a.packet_alert AS is_packet_alert
+    FROM alerts a
+    LEFT JOIN flows.rules r USING (id);

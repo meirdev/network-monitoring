@@ -254,3 +254,23 @@ ENGINE = MergeTree()
 PARTITION BY toDate(time_received)
 ORDER BY (prefix, proto, time_received)
 TTL toDate(time_received) + INTERVAL 7 DAY;
+
+
+CREATE TABLE IF NOT EXISTS flows.threshold_alerts
+(
+    rule_id LowCardinality(String),
+    rule_name LowCardinality(String),
+    alert_type LowCardinality(String),
+    prefix LowCardinality(String),
+
+    alert_time DateTime,
+    peak_bps Float64,
+    peak_pps Float64,
+
+    is_bandwidth_alert Bool,
+    is_packet_alert Bool
+)
+ENGINE = MergeTree()
+PARTITION BY toDate(alert_time)
+ORDER BY alert_time
+TTL toDateTime(alert_time) + INTERVAL 1 HOUR;
