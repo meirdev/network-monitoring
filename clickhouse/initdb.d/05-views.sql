@@ -69,19 +69,23 @@ CREATE VIEW IF NOT EXISTS flows.dynamic_threshold_alerts_vw AS (
         prefixes_stats AS (
             SELECT
                 prefix,
+                avgIf(bytes * 8 / 60, time_received >= short_win) AS short_avg_bps,
+                avgIf(packets / 60, time_received >= short_win) AS short_avg_pps,
                 maxIf(bytes * 8 / 60, time_received >= short_win) AS short_max_bps,
                 maxIf(packets / 60, time_received >= short_win) AS short_max_pps,
-                avg(bytes * 8 / 60) AS long_avg_bps,
-                stddevPopStable(bytes * 8 / 60) AS long_stddev_bps,
-                avg(packets / 60) AS long_avg_pps,
-                stddevPopStable(packets / 60) AS long_stddev_pps,
+                avgIf(bytes * 8 / 60, time_received < short_win) AS long_avg_bps,
+                stddevPopStableIf(bytes * 8 / 60, time_received < short_win) AS long_stddev_bps,
+                avgIf(packets / 60, time_received < short_win) AS long_avg_pps,
+                stddevPopStableIf(packets / 60, time_received < short_win) AS long_stddev_pps,
                 countIf(time_received < short_win) AS baseline_samples
             FROM flows.prefixes_total_1m FINAL
             WHERE
                 time_received BETWEEN long_win AND datetime_rounded
                 AND prefix IN (SELECT prefix FROM threshold_rules)
             GROUP BY prefix
-            HAVING baseline_samples >= 30
+            HAVING
+                baseline_samples >= 30
+                AND long_avg_bps >= 1000000  -- at least 1 Mbps average
         ),
         computed_alerts AS (
             SELECT
@@ -90,11 +94,17 @@ CREATE VIEW IF NOT EXISTS flows.dynamic_threshold_alerts_vw AS (
                 r.zscore_target,
                 ps.short_max_bps AS peak_bps,
                 ps.short_max_pps AS peak_pps,
+                ps.short_avg_bps,
+                ps.short_avg_pps,
+                ps.long_avg_bps,
+                ps.long_stddev_bps,
+                ps.long_avg_pps,
+                ps.long_stddev_pps,
                 if(ps.long_stddev_bps > 0,
-                   (ps.short_max_bps - ps.long_avg_bps) / ps.long_stddev_bps,
+                   (ps.short_avg_bps - ps.long_avg_bps) / ps.long_stddev_bps,
                    0) AS bps_zscore,
                 if(ps.long_stddev_pps > 0,
-                   (ps.short_max_pps - ps.long_avg_pps) / ps.long_stddev_pps,
+                   (ps.short_avg_pps - ps.long_avg_pps) / ps.long_stddev_pps,
                    0) AS pps_zscore,
                 SensitivityLevelToZScore(r.zscore_sensitivity) AS threshold_zscore
             FROM prefixes_stats ps

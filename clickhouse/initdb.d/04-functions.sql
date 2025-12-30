@@ -41,5 +41,5 @@ CREATE FUNCTION IF NOT EXISTS NumToProtoString AS (proto) ->
 
 CREATE FUNCTION IF NOT EXISTS SensitivityLevelToZScore AS (sensitivity) ->
 (
-    transform(sensitivity, ['low', 'medium', 'high'], [4, 3, 2], 3)
+    transform(sensitivity, ['low', 'medium', 'high'], [5, 4, 3], 4)
 );
