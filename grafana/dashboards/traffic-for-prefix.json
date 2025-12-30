@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 0,
+  "id": 5,
   "links": [],
   "panels": [
     {
@@ -97,9 +97,7 @@
           "calcs": ["min", "max", "p95", "mean", "lastNotNull"],
           "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true,
-          "sortBy": "Max",
-          "sortDesc": true
+          "showLegend": true
         },
         "tooltip": {
           "hideZeros": false,
@@ -128,19 +126,11 @@
           },
           "pluginVersion": "4.11.4",
           "queryType": "table",
-          "rawSql": "SELECT $__timeInterval(time_received) AS time, prefix, sum(bytes * 8 / $__interval_s) AS bps FROM flows.prefixes_total_1m WHERE $__timeFilter(time_received) GROUP BY prefix, time ORDER BY prefix, time",
+          "rawSql": "SELECT $__timeInterval(time_received) AS time, sum(bytes * 8 / $__interval_s) AS bps FROM flows.prefixes_total_1m WHERE $__timeFilter(time_received) AND prefix = ${prefix:sqlstring} GROUP BY time ORDER BY time",
           "refId": "A"
         }
       ],
       "title": "Traffic Rate",
-      "transformations": [
-        {
-          "id": "prepareTimeSeries",
-          "options": {
-            "format": "multi"
-          }
-        }
-      ],
       "type": "timeseries"
     },
     {
@@ -219,9 +209,7 @@
           "calcs": ["min", "max", "p95", "mean", "lastNotNull"],
           "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true,
-          "sortBy": "Max",
-          "sortDesc": true
+          "showLegend": true
         },
         "tooltip": {
           "hideZeros": false,
@@ -250,19 +238,11 @@
           },
           "pluginVersion": "4.11.4",
           "queryType": "table",
-          "rawSql": "SELECT $__timeInterval(time_received) AS time, prefix, sum(packets / $__interval_s) AS pps FROM flows.prefixes_total_1m WHERE $__timeFilter(time_received) GROUP BY prefix, time ORDER BY prefix, time",
+          "rawSql": "SELECT $__timeInterval(time_received) AS time, sum(packets / $__interval_s) AS pps FROM flows.prefixes_total_1m WHERE $__timeFilter(time_received) AND prefix = ${prefix:sqlstring} GROUP BY time ORDER BY time",
           "refId": "A"
         }
       ],
       "title": "Packets Rate",
-      "transformations": [
-        {
-          "id": "prepareTimeSeries",
-          "options": {
-            "format": "multi"
-          }
-        }
-      ],
       "type": "timeseries"
     }
   ],
@@ -271,7 +251,27 @@
   "schemaVersion": 42,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allowCustomValue": false,
+        "current": {
+          "text": "169.150.235.0/24",
+          "value": "169.150.235.0/24"
+        },
+        "datasource": {
+          "type": "grafana-clickhouse-datasource",
+          "uid": "P5DD39911892E6074"
+        },
+        "definition": "SELECT prefix FROM flows.prefixes",
+        "label": "Prefix",
+        "name": "prefix",
+        "options": [],
+        "query": "SELECT prefix FROM flows.prefixes",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-1h",
@@ -279,7 +279,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Traffic Prefixes",
-  "uid": "adc9lg6",
-  "version": 2
+  "title": "Traffic for Prefix",
+  "uid": "ads46q7",
+  "version": 1
 }
