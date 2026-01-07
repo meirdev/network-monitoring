@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 5,
+  "id": 7,
   "links": [],
   "panels": [
     {
@@ -85,7 +85,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 24,
         "x": 0,
         "y": 0
@@ -97,11 +97,13 @@
           "calcs": ["min", "max", "p95", "mean", "lastNotNull"],
           "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -113,7 +115,7 @@
             "uid": "P5DD39911892E6074"
           },
           "editorType": "sql",
-          "format": 1,
+          "format": 0,
           "meta": {
             "builderOptions": {
               "columns": [],
@@ -125,8 +127,8 @@
             }
           },
           "pluginVersion": "4.11.4",
-          "queryType": "table",
-          "rawSql": "SELECT $__timeInterval(time_received) AS time, sum(bytes * 8 / $__interval_s) AS bps FROM flows.prefixes_total_1m WHERE $__timeFilter(time_received) AND prefix = ${prefix:sqlstring} GROUP BY time ORDER BY time",
+          "queryType": "timeseries",
+          "rawSql": "SELECT\r\n  $__timeInterval(time_received) AS time,\r\n  proto,\r\n  sum(protoMap.bytes * 8 / $__interval_s) AS bps\r\nFROM flows.prefixes_proto_profile_1m\r\nARRAY JOIN protoMap.proto AS proto, protoMap.bytes\r\nWHERE $__timeFilter(time_received) AND prefix = ${prefix:sqlstring}\r\nGROUP BY proto, time\r\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -197,10 +199,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 10
       },
       "id": 2,
       "interval": "1m",
@@ -209,11 +211,13 @@
           "calcs": ["min", "max", "p95", "mean", "lastNotNull"],
           "displayMode": "table",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
         },
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
@@ -225,7 +229,7 @@
             "uid": "P5DD39911892E6074"
           },
           "editorType": "sql",
-          "format": 1,
+          "format": 0,
           "meta": {
             "builderOptions": {
               "columns": [],
@@ -237,8 +241,8 @@
             }
           },
           "pluginVersion": "4.11.4",
-          "queryType": "table",
-          "rawSql": "SELECT $__timeInterval(time_received) AS time, sum(packets / $__interval_s) AS pps FROM flows.prefixes_total_1m WHERE $__timeFilter(time_received) AND prefix = ${prefix:sqlstring} GROUP BY time ORDER BY time",
+          "queryType": "timeseries",
+          "rawSql": "SELECT\r\n  $__timeInterval(time_received) AS time,\r\n  proto,\r\n  sum(protoMap.packets / $__interval_s) AS pps\r\nFROM flows.prefixes_proto_profile_1m\r\nARRAY JOIN protoMap.proto AS proto, protoMap.packets\r\nWHERE $__timeFilter(time_received) AND prefix = ${prefix:sqlstring}\r\nGROUP BY proto, time\r\nORDER BY time",
           "refId": "A"
         }
       ],
