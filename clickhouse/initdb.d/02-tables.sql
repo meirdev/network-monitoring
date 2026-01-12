@@ -273,5 +273,30 @@ CREATE TABLE IF NOT EXISTS flows.threshold_alerts
 ENGINE = MergeTree()
 ORDER BY alert_time
 TTL toDateTime(alert_time) + INTERVAL 1 HOUR;
+
+
+CREATE TABLE IF NOT EXISTS flows.advanced_ddos_alerts
+(
+    rule_id LowCardinality(String),
+    rule_name LowCardinality(String),
+
+    prefix LowCardinality(String),
+    proto LowCardinality(String),
+
+    current_bps Float64,
+    current_pps Float64,
+    current_fps Float64,
+
+    recommend_bps Float64,
+    recommend_pps Float64,
+    recommend_fps Float64,
+
+    bps_alert Bool,
+    pps_alert Bool,
+    fps_alert Bool,
+
+    alert_time DateTime
+)
+ENGINE = MergeTree()
 ORDER BY alert_time
 TTL toDateTime(alert_time) + INTERVAL 1 HOUR;

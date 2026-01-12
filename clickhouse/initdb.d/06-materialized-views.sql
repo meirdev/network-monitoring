@@ -278,3 +278,43 @@ REFRESH EVERY 60 SECOND APPEND TO flows.threshold_alerts AS
         a.packet_alert AS is_packet_alert
     FROM alerts a
     LEFT JOIN flows.rules r USING (id);
+
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS flows.advanced_ddos_alerts_mv
+REFRESH EVERY 60 SECOND APPEND TO flows.advanced_ddos_alerts AS
+    WITH
+        now() AS current_time,
+        alerts AS (
+            SELECT
+                id,
+                time_received,
+                prefix,
+                proto,
+                current_bps,
+                current_pps,
+                current_fps,
+                recommend_bps,
+                recommend_pps,
+                recommend_fps,
+                bps_alert,
+                pps_alert,
+                fps_alert
+            FROM flows.advanced_ddos_alerts_vw(date=current_time, sensitivity='medium')
+        )
+    SELECT
+        a.id AS rule_id,
+        r.name AS rule_name,
+        a.prefix,
+        a.proto,
+        a.current_bps,
+        a.current_pps,
+        a.current_fps,
+        a.recommend_bps,
+        a.recommend_pps,
+        a.recommend_fps,
+        a.bps_alert,
+        a.pps_alert,
+        a.fps_alert,
+        a.time_received AS alert_time
+    FROM alerts a
+    LEFT JOIN flows.rules r ON a.id = r.id;
