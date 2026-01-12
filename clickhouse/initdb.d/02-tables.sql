@@ -271,6 +271,7 @@ CREATE TABLE IF NOT EXISTS flows.threshold_alerts
     is_packet_alert Bool
 )
 ENGINE = MergeTree()
-PARTITION BY toDate(alert_time)
+ORDER BY alert_time
+TTL toDateTime(alert_time) + INTERVAL 1 HOUR;
 ORDER BY alert_time
 TTL toDateTime(alert_time) + INTERVAL 1 HOUR;
