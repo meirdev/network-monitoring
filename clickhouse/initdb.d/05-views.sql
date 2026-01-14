@@ -137,14 +137,13 @@ CREATE VIEW IF NOT EXISTS flows.advanced_ddos_alerts_vw AS (
             SELECT
             	prefix,
                 proto,
-                floor(avg(p95_bytes)) * 8 / 60 AS avg_bps,
-                floor(avg(p95_packets)) / 60 AS avg_pps,
-                floor(avg(p95_flows)) / 60 AS avg_fps
+                p95_bytes * 8 / 60 AS prev_week_bps,
+                p95_packets / 60 AS prev_week_pps,
+                p95_flows / 60 AS prev_week_fps
             FROM flows.prefixes_proto_profile_1d
             WHERE
-                time_received BETWEEN datetime_rounded - INTERVAL 7 DAY AND datetime_rounded
+                time_received = toStartOfDay(datetime_rounded) - INTERVAL 7 DAY
                 AND prefix IN (SELECT prefix FROM threshold_rules)
-            GROUP BY prefix, proto
         )
         SELECT
             r.id AS id,
@@ -154,9 +153,9 @@ CREATE VIEW IF NOT EXISTS flows.advanced_ddos_alerts_vw AS (
             p1m.`protoMap.bytes` * 8 / 60 AS current_bps,
             p1m.`protoMap.packets` / 60 AS current_pps,
             p1m.`protoMap.flows` / 60 AS current_fps,
-            avg_bps * sensitivity_value AS recommend_bps,
-            avg_pps * sensitivity_value AS recommend_pps,
-            avg_fps * sensitivity_value AS recommend_fps,
+            prev_week_bps * sensitivity_value AS recommend_bps,
+            prev_week_pps * sensitivity_value AS recommend_pps,
+            prev_week_fps * sensitivity_value AS recommend_fps,
             current_bps >= recommend_bps AS bps_alert,
             current_pps >= recommend_pps AS pps_alert,
             current_fps >= recommend_fps AS fps_alert
