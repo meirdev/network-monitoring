@@ -231,7 +231,7 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_proto_profile_1m
 ENGINE = SummingMergeTree()
 PARTITION BY toDate(time_received)
 ORDER BY (prefix, time_received)
-TTL toDate(time_received) + INTERVAL 7 DAY;
+TTL toDate(time_received) + INTERVAL 30 DAY;
 
 
 CREATE TABLE IF NOT EXISTS flows.prefixes_proto_profile_1d
@@ -253,7 +253,7 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_proto_profile_1d
 ENGINE = MergeTree()
 PARTITION BY toDate(time_received)
 ORDER BY (prefix, proto, time_received)
-TTL toDate(time_received) + INTERVAL 7 DAY;
+TTL toDate(time_received) + INTERVAL 30 DAY;
 
 
 CREATE TABLE IF NOT EXISTS flows.threshold_alerts
