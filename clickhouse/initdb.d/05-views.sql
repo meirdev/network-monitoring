@@ -1,6 +1,6 @@
 CREATE VIEW IF NOT EXISTS flows.static_threshold_alerts_vw AS (
     WITH
-        toDateTime({date:DateTime}) AS datetime_rounded,
+        toStartOfMinute({date:DateTime}) AS datetime_rounded,
         threshold_rules AS (
             SELECT
                 id,
@@ -54,7 +54,7 @@ CREATE VIEW IF NOT EXISTS flows.static_threshold_alerts_vw AS (
 
 CREATE VIEW IF NOT EXISTS flows.dynamic_threshold_alerts_vw AS (
     WITH
-        toDateTime({date:DateTime}) AS datetime_rounded,
+        toStartOfMinute({date:DateTime}) AS datetime_rounded,
         datetime_rounded - INTERVAL 5 MINUTE AS short_win,
         datetime_rounded - INTERVAL 4 HOUR AS long_win,
         threshold_rules AS (
@@ -124,7 +124,7 @@ CREATE VIEW IF NOT EXISTS flows.dynamic_threshold_alerts_vw AS (
 
 CREATE VIEW IF NOT EXISTS flows.advanced_ddos_alerts_vw AS (
     WITH
-        toDateTime({date:DateTime}) AS datetime_rounded,
+        toStartOfMinute({date:DateTime}) AS datetime_rounded,
         transform({sensitivity:String}, ['low', 'medium', 'high'], [3.0, 2.0, 1.5], 1.5) AS sensitivity_value,
         threshold_rules AS (
             SELECT
