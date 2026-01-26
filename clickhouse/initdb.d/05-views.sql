@@ -165,7 +165,7 @@ CREATE VIEW IF NOT EXISTS flows.advanced_ddos_alerts_vw AS (
             protoMap.bytes,
             protoMap.packets,
             protoMap.flows
-        INNER ANY JOIN prefixes_proto_1d p1d ON (p1m.prefix = p1d.prefix AND p1m.`protoMap.proto` = p1d.proto)
+        INNER JOIN prefixes_proto_1d p1d ON (p1m.prefix = p1d.prefix AND p1m.`protoMap.proto` = p1d.proto)
         INNER JOIN threshold_rules r ON p1m.prefix = r.prefix
         WHERE p1m.time_received = datetime_rounded AND (bps_alert OR pps_alert OR fps_alert)
 );
