@@ -64,15 +64,7 @@ class RouterService(BaseService):
         )
 
     def add_router(self, router: RouterCreate) -> Router:
-        exists = cast(
-            list[tuple[Any, ...]],
-            self.state.client_admin.execute(
-                "SELECT COUNT() > 0 FROM flows.routers WHERE router_ip = %(router_ip)s",
-                params={"router_ip": str(router.router_ip)},
-            ),
-        )
-        if exists and exists[0][0]:
-            raise RouterIPExistsError("router IP already exists")
+        self._check_exists(str(router.router_ip))
 
         id = generate_id()
 
@@ -93,15 +85,7 @@ class RouterService(BaseService):
         return Router(id=id, **router.model_dump())
 
     def update_router(self, id: str, router: RouterUpdate) -> Router:
-        exists = cast(
-            list[tuple[Any, ...]],
-            self.state.client_admin.execute(
-                "SELECT COUNT() > 0 FROM flows.routers WHERE router_ip = %(router_ip)s AND id != %(id)s",
-                params={"router_ip": str(router.router_ip), "id": id},
-            ),
-        )
-        if exists and exists[0][0]:
-            raise RouterIPExistsError("router IP already exists")
+        self._check_exists(str(router.router_ip), id)
 
         self.state.client_admin.execute(
             """
@@ -126,6 +110,24 @@ class RouterService(BaseService):
             "ALTER TABLE flows.routers DELETE WHERE id = %(id)s",
             params={"id": id},
         )
+
+    def _check_exists(self, router_ip: str, id: str | None = None) -> None:
+        if id:
+            sql = "SELECT COUNT() > 0 FROM flows.routers WHERE router_ip = %(router_ip)s AND id != %(id)s"
+        else:
+            sql = (
+                "SELECT COUNT() > 0 FROM flows.routers WHERE router_ip = %(router_ip)s"
+            )
+
+        exists = cast(
+            list[tuple[Any, ...]],
+            self.state.client_admin.execute(
+                sql,
+                params={"router_ip": router_ip, "id": id},
+            ),
+        )
+        if exists and exists[0][0]:
+            raise RouterIPExistsError("router IP already exists")
 
 
 RouterServiceDep = Annotated[RouterService, Depends(RouterService)]

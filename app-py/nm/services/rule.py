@@ -94,7 +94,7 @@ class RuleService(BaseService):
                 {
                     "id": id,
                     "name": rule.name,
-                    "prefixes": rule.prefixes,
+                    "prefixes": rule.prefixes_str,
                     "type": rule.type,
                     "bandwidth_threshold": rule.bandwidth_threshold,
                     "packet_threshold": rule.packet_threshold,
@@ -125,7 +125,7 @@ class RuleService(BaseService):
             params={
                 "id": id,
                 "name": rule.name,
-                "prefixes": rule.prefixes,
+                "prefixes": rule.prefixes_str,
                 "type": rule.type,
                 "bandwidth_threshold": rule.bandwidth_threshold,
                 "packet_threshold": rule.packet_threshold,
