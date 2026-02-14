@@ -50,7 +50,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
     return encoder(
         content=res.model_dump(),
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
     )
 
 
