@@ -1,0 +1,32 @@
+[project]
+name = "app-py"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "click>=8.3.1",
+    "clickhouse-driver>=0.2.10",
+    "fastapi[standard,standard-no-fastapi-cloud-cli]>=0.128.0",
+    "orjson>=3.11.6",
+    "plotly>=6.5.2",
+    "polars>=1.37.1",
+    "schedule>=1.2.2",
+    "streamlit>=1.53.1",
+]
+
+[tool.pyrefly]
+project-includes = [
+    "**/*.py*",
+    "**/*.ipynb",
+]
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "sqlparse>=0.5.5",
+    "testcontainers>=4.14.1",
+]
