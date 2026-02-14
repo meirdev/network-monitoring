@@ -110,6 +110,9 @@ class RouterService(BaseService):
             "ALTER TABLE flows.routers DELETE WHERE id = %(id)s",
             params={"id": id},
         )
+        self.state.client_admin.execute(
+            "OPTIMIZE TABLE flows.routers FINAL",
+        )
 
     def _check_exists(self, router_ip: str, id: str | None = None) -> None:
         if id:

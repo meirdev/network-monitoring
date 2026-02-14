@@ -9,7 +9,9 @@ from nm.utils import generate_id
 
 class RuleService(BaseService):
     def get_rules(self) -> list[Rule]:
-        result = cast(list[tuple[Any, ...]], self.state.client_admin.execute("""
+        result = cast(
+            list[tuple[Any, ...]],
+            self.state.client_admin.execute("""
         SELECT
             id,
             name,
@@ -21,7 +23,8 @@ class RuleService(BaseService):
             zscore_sensitivity,
             zscore_target
         FROM flows.rules
-        """))
+        """),
+        )
 
         return [
             Rule(
@@ -39,8 +42,10 @@ class RuleService(BaseService):
         ]
 
     def get_rule(self, id: str) -> Rule | None:
-        result = cast(list[tuple[Any, ...]], self.state.client_admin.execute(
-            """
+        result = cast(
+            list[tuple[Any, ...]],
+            self.state.client_admin.execute(
+                """
         SELECT
             id,
             name,
@@ -54,8 +59,9 @@ class RuleService(BaseService):
         FROM flows.rules
         WHERE id = %(id)s
         """,
-            params={"id": id},
-        ))
+                params={"id": id},
+            ),
+        )
         if not result:
             return None
 
@@ -142,6 +148,9 @@ class RuleService(BaseService):
         self.state.client_admin.execute(
             "ALTER TABLE flows.rules DELETE WHERE id = %(id)s",
             params={"id": id},
+        )
+        self.state.client_admin.execute(
+            "OPTIMIZE TABLE flows.rules FINAL",
         )
         self._update_dictionary()
 
