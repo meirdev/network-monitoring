@@ -93,7 +93,7 @@ services:
       dockerfile: Dockerfile
     container_name: network-monitoring-api
     ports:
-      - "8090:8090"
+      - "8090:8000"
     environment:
       CLICKHOUSE_ADDR: db:9000
       CLICKHOUSE_DATABASE: flows
