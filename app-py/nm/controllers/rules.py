@@ -23,11 +23,11 @@ def get_rule(rule_service: RuleServiceDep, rule_id: str):
     return encoder(rule)
 
 
-@router.post("/", response_model=Response[Rule], status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=Response[Rule])
 def add_rule(rule_service: RuleServiceDep, rule: RuleCreate):
     created_rule = rule_service.add_rule(rule)
 
-    return encoder(created_rule)
+    return encoder(created_rule, status_code=status.HTTP_201_CREATED)
 
 
 @router.put("/{rule_id}", response_model=Response[Rule])
@@ -37,6 +37,8 @@ def update_rule(rule_service: RuleServiceDep, rule_id: str, rule: RuleUpdate):
     return encoder(updated_rule)
 
 
-@router.delete("/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{rule_id}")
 def delete_rule(rule_service: RuleServiceDep, rule_id: str):
     rule_service.delete_rule(rule_id)
+
+    return encoder(None, status_code=status.HTTP_204_NO_CONTENT)
