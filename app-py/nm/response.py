@@ -3,7 +3,7 @@ from typing import Any, Generic, TypeVar
 import orjson
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
-from pydantic.json import pydantic_encoder
+from pydantic_core import to_jsonable_python
 
 T = TypeVar("T")
 
@@ -32,6 +32,6 @@ class encoder(JSONResponse):
 
         return orjson.dumps(
             content,
-            default=pydantic_encoder,
+            default=to_jsonable_python,
             option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY,
         )
