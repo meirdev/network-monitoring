@@ -95,10 +95,8 @@ services:
     ports:
       - "8090:8000"
     environment:
-      CLICKHOUSE_ADDR: db:9000
-      CLICKHOUSE_DATABASE: flows
-      CLICKHOUSE_USERNAME: default
-      CLICKHOUSE_PASSWORD: password
+      CLICKHOUSE_DSN_ADMIN: "clickhouse://default:password@db:9000/flows"
+      CLICKHOUSE_DSN_READER: "clickhouse://reader:password@db:9000/flows"
     restart: always
     depends_on:
       - db
