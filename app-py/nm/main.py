@@ -18,11 +18,13 @@ async def lifespan(_: FastAPI) -> AsyncIterator[State]:
     yield {
         "client_admin": Client(
             host=settings.clickhouse_dsn_admin.host,
+            port=settings.clickhouse_dsn_admin.port,
             user=settings.clickhouse_dsn_admin.username,
             password=settings.clickhouse_dsn_admin.password,
         ),
         "client_reader": Client(
             host=settings.clickhouse_dsn_reader.host,
+            port=settings.clickhouse_dsn_reader.port,
             user=settings.clickhouse_dsn_reader.username,
             password=settings.clickhouse_dsn_reader.password,
         ),

@@ -27,6 +27,7 @@ def foo():
 
         client = Client(
             host=settings.clickhouse_dsn_admin.host,
+            port=settings.clickhouse_dsn_admin.port,
             user=settings.clickhouse_dsn_admin.username,
             password=settings.clickhouse_dsn_admin.password,
         )
