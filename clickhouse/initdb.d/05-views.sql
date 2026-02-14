@@ -169,3 +169,62 @@ CREATE VIEW IF NOT EXISTS flows.advanced_ddos_alerts_vw AS (
         INNER JOIN threshold_rules r ON p1m.prefix = r.prefix
         WHERE p1m.time_received = datetime_rounded AND (bps_alert OR pps_alert OR fps_alert)
 );
+
+
+CREATE VIEW IF NOT EXISTS flows.advanced_ddos_burst_alerts_vw AS (
+    WITH
+        toStartOfMinute({date:DateTime}) AS datetime_rounded,
+        transform({sensitivity:String}, ['low', 'medium', 'high'], [3.0, 2.0, 1.5], 1.5) AS sensitivity_value,
+        threshold_rules AS (
+            SELECT
+                id,
+                arrayJoin(prefixes) AS prefix
+            FROM flows.rules
+            WHERE type = 'advanced_ddos'
+        ),
+        recent_avg AS (
+            SELECT
+                prefix,
+                proto,
+                avg(bytes) * 8 / 60 AS avg_bps,
+                avg(packets) / 60 AS avg_pps,
+                avg(flows) / 60 AS avg_fps
+            FROM flows.prefixes_proto_profile_1m FINAL
+            ARRAY JOIN
+                protoMap.proto AS proto,
+                protoMap.bytes AS bytes,
+                protoMap.packets AS packets,
+                protoMap.flows AS flows
+            WHERE
+                time_received BETWEEN datetime_rounded - INTERVAL 5 MINUTE AND datetime_rounded - INTERVAL 1 MINUTE
+                AND prefix IN (SELECT prefix FROM threshold_rules)
+            GROUP BY prefix, proto
+            HAVING avg_bps >= 1000000  -- at least 1 Mbps
+        )
+        SELECT
+            r.id AS id,
+            p1m.time_received AS time_received,
+            p1m.prefix AS prefix,
+            p1m.`protoMap.proto` AS proto,
+            p1m.`protoMap.bytes` * 8 / 60 AS current_bps,
+            p1m.`protoMap.packets` / 60 AS current_pps,
+            p1m.`protoMap.flows` / 60 AS current_fps,
+            ra.avg_bps AS baseline_bps,
+            ra.avg_pps AS baseline_pps,
+            ra.avg_fps AS baseline_fps,
+            ra.avg_bps * sensitivity_value AS threshold_bps,
+            ra.avg_pps * sensitivity_value AS threshold_pps,
+            ra.avg_fps * sensitivity_value AS threshold_fps,
+            current_bps >= threshold_bps AS bps_alert,
+            current_pps >= threshold_pps AS pps_alert,
+            current_fps >= threshold_fps AS fps_alert
+        FROM flows.prefixes_proto_profile_1m p1m FINAL
+        ARRAY JOIN
+            protoMap.proto,
+            protoMap.bytes,
+            protoMap.packets,
+            protoMap.flows
+        INNER JOIN recent_avg ra ON (p1m.prefix = ra.prefix AND p1m.`protoMap.proto` = ra.proto)
+        INNER JOIN threshold_rules r ON p1m.prefix = r.prefix
+        WHERE p1m.time_received = datetime_rounded AND (bps_alert OR pps_alert OR fps_alert)
+);
