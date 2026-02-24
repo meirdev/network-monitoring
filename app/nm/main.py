@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 
 from nm.controllers.alerts import router as alerts_router
+from nm.controllers.expressions import router as expressions_router
 from nm.controllers.routers import router as routers_router
 from nm.controllers.rules import router as rules_router
 from nm.response import ResponseError, encoder, response_error
@@ -57,3 +58,4 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 app.include_router(routers_router, prefix="/routers", tags=["routers"])
 app.include_router(rules_router, prefix="/rules", tags=["rules"])
 app.include_router(alerts_router, prefix="/alerts", tags=["alerts"])
+app.include_router(expressions_router, prefix="/expressions", tags=["expressions"])

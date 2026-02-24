@@ -300,3 +300,29 @@ CREATE TABLE IF NOT EXISTS flows.advanced_ddos_alerts
 ENGINE = MergeTree()
 ORDER BY alert_time
 TTL toDateTime(alert_time) + INTERVAL 1 HOUR;
+
+
+CREATE TABLE IF NOT EXISTS flows.expressions
+(
+    id LowCardinality(String),
+    name LowCardinality(String),
+    expression String
+)
+ENGINE = ReplacingMergeTree()
+PRIMARY KEY id;
+
+
+CREATE TABLE IF NOT EXISTS flows.expression_metrics
+(
+    time_received DateTime,
+    expression_id LowCardinality(String),
+    packets UInt64,
+    bytes UInt64
+)
+ENGINE = SummingMergeTree()
+PARTITION BY toDate(time_received)
+ORDER BY (expression_id, time_received)
+TTL toDate(time_received) + INTERVAL 30 DAY;
+
+
+CREATE TABLE IF NOT EXISTS flows.expression_metrics_1m AS flows.expression_metrics;
