@@ -318,3 +318,15 @@ REFRESH EVERY 60 SECOND APPEND TO flows.advanced_ddos_alerts AS
         a.time_received AS alert_time
     FROM alerts a
     LEFT JOIN flows.rules r ON a.id = r.id;
+
+
+CREATE MATERIALIZED VIEW IF NOT EXISTS flows.expression_metrics_1m_mv TO flows.expression_metrics_1m AS
+    SELECT
+        expression_id,
+
+        toStartOfMinute(time_received) AS time_received,
+
+        sum(bytes) AS bytes,
+        sum(packets) AS packets
+    FROM flows.expression_metrics_1m
+    GROUP BY expression_id, time_received;

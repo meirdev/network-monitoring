@@ -101,6 +101,22 @@ services:
     depends_on:
       - db
 
+  metrics:
+    build:
+      context: ./metrics
+      dockerfile: Dockerfile
+    container_name: network-monitoring-metrics
+    command:
+      - -kafka-brokers=kafka:9093
+      - -kafka-topic=flows
+      - -kafka-group=metrics
+      - -clickhouse-dsn=clickhouse://default:password@db:9000/flows
+      - -refresh-interval=60s
+    restart: always
+    depends_on:
+      - kafka
+      - db
+
   # Use vector.dev to read messages from Kafka
   # vector:
   #   image: timberio/vector:0.46.1-debian
