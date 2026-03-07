@@ -31,6 +31,25 @@ Username and password for ClickHouse: `default:password`.
 
 Username and password for Grafana: `admin:admin`.
 
+## ClickHouse Tables
+
+| Table                               | Description                                                       |
+| ----------------------------------- | ----------------------------------------------------------------- |
+| `flows.routers`                     | Router configuration (name, IP, sampling rate)                    |
+| `flows.rules`                       | Alert rules (threshold, zscore, advanced_ddos)                    |
+| `flows.kafka_sink`                  | Kafka source table for incoming flow data                         |
+| `flows.raw`                         | Raw flow data with full details                                   |
+| `flows.prefixes_range`              | IP prefix ranges for fast lookup                                  |
+| `flows.prefixes_total_1m`           | Per-minute traffic totals by prefix                               |
+| `flows.prefixes_src_profile_1h`     | Hourly source network profile by prefix                           |
+| `flows.prefixes_service_profile_1h` | Hourly service profile (dst_addr, port, proto) with p95/max stats |
+| `flows.prefixes_proto_profile_1m`   | Per-minute protocol breakdown by prefix                           |
+| `flows.prefixes_proto_profile_1d`   | Daily protocol profile with p95/max stats                         |
+| `flows.threshold_alerts`            | Generated threshold/zscore alerts                                 |
+| `flows.advanced_ddos_alerts`        | Generated advanced DDoS alerts                                    |
+| `flows.expressions`                 | Custom filter expressions                                         |
+| `flows.expression_metrics`          | Metrics for custom expressions                                    |
+
 ## API Reference
 
 View the full API documentation at http://127.0.0.1:8090/docs/
