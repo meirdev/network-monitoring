@@ -169,6 +169,58 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_src_profile_1h_mv TO flows
     GROUP BY prefix, network, time_received;
 
 
+CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_service_profile_1h_mv
+REFRESH EVERY 1 HOUR APPEND TO flows.prefixes_service_profile_1h AS
+    WITH grouped AS (
+        SELECT
+            arrayJoin(prefixes) AS prefix,
+            dst_addr_str AS dst_addr,
+            dst_port,
+            proto,
+            toStartOfMinute(time_received) AS minute,
+            sum(total_bytes) AS bytes,
+            sum(total_packets) AS packets,
+            count() AS flows,
+            uniqState(src_addr, src_port) AS conn_state
+        FROM flows.raw
+        WHERE time_received >= NOW() - INTERVAL 1 HOUR
+        GROUP BY prefix, dst_addr, dst_port, proto, minute
+    ),
+    stats AS (
+        SELECT
+            prefix,
+            dst_addr,
+            dst_port,
+            proto,
+            toStartOfHour(minute) AS time_received,
+            uniqMerge(conn_state) AS connections,
+            quantile(0.95)(bytes) AS p95_bytes,
+            quantile(0.95)(packets) AS p95_packets,
+            quantile(0.95)(flows) AS p95_flows,
+            max(bytes) AS max_bytes,
+            max(packets) AS max_packets,
+            max(flows) AS max_flows,
+            sum(bytes) AS total_bytes
+        FROM grouped
+        GROUP BY prefix, dst_addr, dst_port, proto, time_received
+    )
+    SELECT
+        prefix,
+        connections,
+        dst_addr,
+        dst_port,
+        proto,
+        time_received,
+        p95_bytes,
+        p95_packets,
+        p95_flows,
+        max_bytes,
+        max_packets,
+        max_flows
+    FROM stats
+    QUALIFY total_bytes >= quantile(0.05)(total_bytes) OVER (PARTITION BY prefix);
+
+
 CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_proto_profile_1m_mv TO flows.prefixes_proto_profile_1m AS
     WITH classified_flows AS (
         SELECT

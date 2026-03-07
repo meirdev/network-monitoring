@@ -215,6 +215,32 @@ ORDER BY (prefix, network, time_received)
 TTL toDate(time_received) + INTERVAL 7 DAY;
 
 
+CREATE TABLE IF NOT EXISTS flows.prefixes_service_profile_1h
+(
+    prefix LowCardinality(String),
+
+    connections UInt64,
+
+    dst_addr String CODEC(ZSTD(6)),
+    dst_port UInt16,
+    proto UInt8,
+
+    time_received DateTime,
+
+    p95_bytes UInt64,
+    p95_packets UInt64,
+    p95_flows UInt64,
+
+    max_bytes UInt64,
+    max_packets UInt64,
+    max_flows UInt64
+)
+ENGINE = SummingMergeTree()
+PARTITION BY toDate(time_received)
+ORDER BY (prefix, dst_addr, dst_port, proto, time_received)
+TTL toDate(time_received) + INTERVAL 7 DAY;
+
+
 CREATE TABLE IF NOT EXISTS flows.prefixes_proto_profile_1m
 (
     prefix LowCardinality(String),
