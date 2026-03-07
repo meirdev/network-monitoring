@@ -147,7 +147,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_total_1m_mv TO flows.prefi
     GROUP BY prefix, time_received;
 
 
-CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_src_profile_10m_mv TO flows.prefixes_src_profile_10m AS
+CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_src_profile_1h_mv TO flows.prefixes_src_profile_1h AS
     SELECT
         arrayJoin(prefixes) AS prefix,
 
@@ -159,7 +159,7 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_src_profile_10m_mv TO flow
             null
         ) AS network,
 
-        toStartOfTenMinutes(time_received) AS time_received,
+        toStartOfHour(time_received) AS time_received,
 
         sum(total_bytes) AS bytes,
         sum(total_packets) AS packets,

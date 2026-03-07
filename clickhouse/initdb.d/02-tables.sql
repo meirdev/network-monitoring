@@ -197,7 +197,7 @@ ENGINE = MergeTree()
 ORDER BY (start, end);
 
 
-CREATE TABLE IF NOT EXISTS flows.prefixes_src_profile_10m
+CREATE TABLE IF NOT EXISTS flows.prefixes_src_profile_1h
 (
     prefix LowCardinality(String),
 
