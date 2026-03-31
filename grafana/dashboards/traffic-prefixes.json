@@ -128,7 +128,7 @@
           },
           "pluginVersion": "4.11.4",
           "queryType": "table",
-          "rawSql": "SELECT $__timeInterval(time_received) AS time, prefix, sum(bytes * 8 / $__interval_s) AS bps FROM flows.prefixes_total_1m WHERE $__timeFilter(time_received) GROUP BY prefix, time ORDER BY prefix, time",
+          "rawSql": "SELECT $__timeInterval(time_received) AS time, prefix, sum(any_bytes * 8 / $__interval_s) AS bps FROM flows.prefixes_proto_1m WHERE $__timeFilter(time_received) GROUP BY prefix, time ORDER BY prefix, time",
           "refId": "A"
         }
       ],
@@ -250,7 +250,7 @@
           },
           "pluginVersion": "4.11.4",
           "queryType": "table",
-          "rawSql": "SELECT $__timeInterval(time_received) AS time, prefix, sum(packets / $__interval_s) AS pps FROM flows.prefixes_total_1m WHERE $__timeFilter(time_received) GROUP BY prefix, time ORDER BY prefix, time",
+          "rawSql": "SELECT $__timeInterval(time_received) AS time, prefix, sum(any_packets / $__interval_s) AS pps FROM flows.prefixes_proto_1m WHERE $__timeFilter(time_received) GROUP BY prefix, time ORDER BY prefix, time",
           "refId": "A"
         }
       ],

@@ -1,5 +1,5 @@
-from pydantic.fields import Field
 from pydantic import ClickHouseDsn
+from pydantic.fields import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

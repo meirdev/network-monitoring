@@ -33,22 +33,46 @@ Username and password for Grafana: `admin:admin`.
 
 ## ClickHouse Tables
 
-| Table                               | Description                                                       |
-| ----------------------------------- | ----------------------------------------------------------------- |
-| `flows.routers`                     | Router configuration (name, IP, sampling rate)                    |
-| `flows.rules`                       | Alert rules (threshold, zscore, advanced_ddos)                    |
-| `flows.kafka_sink`                  | Kafka source table for incoming flow data                         |
-| `flows.raw`                         | Raw flow data with full details                                   |
-| `flows.prefixes_range`              | IP prefix ranges for fast lookup                                  |
-| `flows.prefixes_total_1m`           | Per-minute traffic totals by prefix                               |
-| `flows.prefixes_src_profile_1h`     | Hourly source network profile by prefix                           |
-| `flows.prefixes_service_profile_1h` | Hourly service profile (dst_addr, port, proto) with p95/max stats |
-| `flows.prefixes_proto_profile_1m`   | Per-minute protocol breakdown by prefix                           |
-| `flows.prefixes_proto_profile_1d`   | Daily protocol profile with p95/max stats                         |
-| `flows.threshold_alerts`            | Generated threshold/zscore alerts                                 |
-| `flows.advanced_ddos_alerts`        | Generated advanced DDoS alerts                                    |
-| `flows.expressions`                 | Custom filter expressions                                         |
-| `flows.expression_metrics`          | Metrics for custom expressions                                    |
+### Configuration
+
+| Table                  | Description                                    |
+| ---------------------- | ---------------------------------------------- |
+| `flows.routers`        | Router configuration (name, IP, sampling rate) |
+| `flows.rules`          | Alert rules (threshold, zscore, advanced_ddos) |
+| `flows.expressions`    | Custom filter expressions                      |
+| `flows.prefixes_range` | IP prefix ranges for fast lookup               |
+
+### Ingestion
+
+| Table              | Description                               |
+| ------------------ | ----------------------------------------- |
+| `flows.kafka_sink` | Kafka source table for incoming flow data |
+| `flows.raw`        | Raw flow data with full details           |
+
+### Aggregation Pipeline
+
+Traffic data flows through a feed-forward aggregation pipeline. Each level derives from the one above — only `ip_port_1m` reads from `flows.raw`.
+
+| Table                       | Resolution | Description                                                     |
+| --------------------------- | ---------- | --------------------------------------------------------------- |
+| `flows.prefixes_ip_port_1m` | 1 min      | Traffic by (prefix, dst_addr, dst_port) with wide proto columns |
+| `flows.prefixes_ip_port_1h` | 1 hour     | Hourly sums, bottom 5% ports filtered out                       |
+| `flows.prefixes_ip_port_1d` | 1 day      | Daily p95/max, bottom 5% ports filtered out                     |
+| `flows.prefixes_ip_1m`      | 1 min      | Traffic by (prefix, dst_addr) with wide proto columns           |
+| `flows.prefixes_ip_1h`      | 1 hour     | Hourly sums per host                                            |
+| `flows.prefixes_ip_1d`      | 1 day      | Daily p95/max per host                                          |
+| `flows.prefixes_proto_1m`   | 1 min      | Traffic by (prefix) with wide proto columns                     |
+| `flows.prefixes_proto_1h`   | 1 hour     | Hourly sums per prefix                                          |
+| `flows.prefixes_proto_1d`   | 1 day      | Daily p95/max per prefix                                        |
+| `flows.prefixes_src_1h`     | 1 hour     | Source /16 (IPv4) and /32 (IPv6) network profile per prefix     |
+| `flows.prefixes_src_1d`     | 1 day      | Daily source network profile (summed from 1h)                   |
+
+### Expression Metrics
+
+| Table                         | Description                    |
+| ----------------------------- | ------------------------------ |
+| `flows.expression_metrics`    | Metrics for custom expressions |
+| `flows.expression_metrics_1m` | Per-minute rollup              |
 
 ## API Reference
 

@@ -8,7 +8,6 @@ LAYOUT(FLAT())
 SOURCE (FILE(path '/var/lib/clickhouse/user_files/protocols.csv' format 'CSVWithNames'))
 LIFETIME(0);
 
-
 CREATE DICTIONARY IF NOT EXISTS flows.prefixes (
     id String,
     prefix String

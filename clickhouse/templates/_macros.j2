@@ -1,0 +1,63 @@
+{# --- Column definitions for CREATE TABLE --- #}
+
+{% macro cols_sum() -%}
+{% for p in protos %}
+    {{ p.name }}_bytes UInt64 CODEC(Delta, ZSTD(1)),
+    {{ p.name }}_packets UInt64 CODEC(Delta, ZSTD(1)),
+    {{ p.name }}_flows UInt64 CODEC(Delta, ZSTD(1)){{ "," if not loop.last }}
+{% endfor %}
+{%- endmacro %}
+
+{% macro cols_stats() -%}
+{% for p in protos %}
+    {{ p.name }}_p95_bytes UInt64 CODEC(ZSTD(1)),
+    {{ p.name }}_p95_packets UInt64 CODEC(ZSTD(1)),
+    {{ p.name }}_p95_flows UInt64 CODEC(ZSTD(1)),
+    {{ p.name }}_max_bytes UInt64 CODEC(ZSTD(1)),
+    {{ p.name }}_max_packets UInt64 CODEC(ZSTD(1)),
+    {{ p.name }}_max_flows UInt64 CODEC(ZSTD(1)){{ "," if not loop.last }}
+{% endfor %}
+{%- endmacro %}
+
+{# --- Precomputed boolean flags for CTE --- #}
+
+{% macro precomputed_flags() -%}
+{% for p in protos if p.flag is defined %}
+            {{ p.flag }} AS is_{{ p.name }}{{ "," if not loop.last }}
+{% endfor %}
+{%- endmacro %}
+
+{# --- SELECT expressions for materialized views --- #}
+
+{% macro select_sumif() -%}
+{% for p in protos %}
+{% if p.cond %}
+        sumIf(total_bytes, {{ p.cond }}) AS {{ p.name }}_bytes,
+        sumIf(total_packets, {{ p.cond }}) AS {{ p.name }}_packets,
+        countIf({{ p.cond }}) AS {{ p.name }}_flows{{ "," if not loop.last }}
+{% else %}
+        sum(total_bytes) AS {{ p.name }}_bytes,
+        sum(total_packets) AS {{ p.name }}_packets,
+        count() AS {{ p.name }}_flows{{ "," if not loop.last }}
+{% endif %}
+{% endfor %}
+{%- endmacro %}
+
+{% macro select_sum() -%}
+{% for p in protos %}
+        sum({{ p.name }}_bytes) AS {{ p.name }}_bytes,
+        sum({{ p.name }}_packets) AS {{ p.name }}_packets,
+        sum({{ p.name }}_flows) AS {{ p.name }}_flows{{ "," if not loop.last }}
+{% endfor %}
+{%- endmacro %}
+
+{% macro select_quantile_max() -%}
+{% for p in protos %}
+        quantile(0.95)({{ p.name }}_bytes) AS {{ p.name }}_p95_bytes,
+        quantile(0.95)({{ p.name }}_packets) AS {{ p.name }}_p95_packets,
+        quantile(0.95)({{ p.name }}_flows) AS {{ p.name }}_p95_flows,
+        max({{ p.name }}_bytes) AS {{ p.name }}_max_bytes,
+        max({{ p.name }}_packets) AS {{ p.name }}_max_packets,
+        max({{ p.name }}_flows) AS {{ p.name }}_max_flows{{ "," if not loop.last }}
+{% endfor %}
+{%- endmacro %}

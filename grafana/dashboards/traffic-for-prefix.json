@@ -128,7 +128,7 @@
           },
           "pluginVersion": "4.11.4",
           "queryType": "timeseries",
-          "rawSql": "SELECT\r\n  $__timeInterval(time_received) AS time,\r\n  proto,\r\n  sum(protoMap.bytes * 8 / $__interval_s) AS bps\r\nFROM flows.prefixes_proto_profile_1m\r\nARRAY JOIN protoMap.proto AS proto, protoMap.bytes\r\nWHERE $__timeFilter(time_received) AND prefix = ${prefix:sqlstring}\r\nGROUP BY proto, time\r\nORDER BY time",
+          "rawSql": "SELECT\r\n  $__timeInterval(time_received) AS time,\r\n  proto,\r\n  sum(bytes * 8 / $__interval_s) AS bps\r\nFROM flows.prefixes_proto_1m\r\nARRAY JOIN\r\n  ['any', 'tcp', 'udp', 'gre', 'esp', 'icmp', 'tcp_fin', 'tcp_syn', 'tcp_rst', 'tcp_psh', 'tcp_ack', 'tcp_urg'] AS proto,\r\n  [any_bytes, tcp_bytes, udp_bytes, gre_bytes, esp_bytes, icmp_bytes, tcp_fin_bytes, tcp_syn_bytes, tcp_rst_bytes, tcp_psh_bytes, tcp_ack_bytes, tcp_urg_bytes] AS bytes\r\nWHERE $__timeFilter(time_received) AND prefix = ${prefix:sqlstring}\r\nGROUP BY proto, time\r\nORDER BY time",
           "refId": "A"
         }
       ],
@@ -242,7 +242,7 @@
           },
           "pluginVersion": "4.11.4",
           "queryType": "timeseries",
-          "rawSql": "SELECT\r\n  $__timeInterval(time_received) AS time,\r\n  proto,\r\n  sum(protoMap.packets / $__interval_s) AS pps\r\nFROM flows.prefixes_proto_profile_1m\r\nARRAY JOIN protoMap.proto AS proto, protoMap.packets\r\nWHERE $__timeFilter(time_received) AND prefix = ${prefix:sqlstring}\r\nGROUP BY proto, time\r\nORDER BY time",
+          "rawSql": "SELECT\r\n  $__timeInterval(time_received) AS time,\r\n  proto,\r\n  sum(packets / $__interval_s) AS pps\r\nFROM flows.prefixes_proto_1m\r\nARRAY JOIN\r\n  ['any', 'tcp', 'udp', 'gre', 'esp', 'icmp', 'tcp_fin', 'tcp_syn', 'tcp_rst', 'tcp_psh', 'tcp_ack', 'tcp_urg'] AS proto,\r\n  [any_packets, tcp_packets, udp_packets, gre_packets, esp_packets, icmp_packets, tcp_fin_packets, tcp_syn_packets, tcp_rst_packets, tcp_psh_packets, tcp_ack_packets, tcp_urg_packets] AS packets\r\nWHERE $__timeFilter(time_received) AND prefix = ${prefix:sqlstring}\r\nGROUP BY proto, time\r\nORDER BY time",
           "refId": "A"
         }
       ],
