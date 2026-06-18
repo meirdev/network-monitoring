@@ -234,9 +234,10 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_ip_port_1h
     dst_addr String CODEC(ZSTD(1)),
     dst_port UInt16 CODEC(T64, LZ4),
     time_received DateTime CODEC(DoubleDelta, LZ4),
-{{ m.cols_sum() | rstrip }}
+{{ m.cols_sum(protocols) | rstrip }},
+{{ m.cols_rate_stats() | rstrip }}
 )
-ENGINE = SummingMergeTree()
+ENGINE = MergeTree()
 PARTITION BY toDate(time_received)
 ORDER BY (prefix, dst_addr, dst_port, time_received)
 TTL toDate(time_received) + INTERVAL {{ ttl.prefixes_ip_port_1h }} DAY;
@@ -248,7 +249,8 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_ip_port_1d
     dst_addr String CODEC(ZSTD(1)),
     dst_port UInt16 CODEC(T64, LZ4),
     time_received DateTime CODEC(DoubleDelta, LZ4),
-{{ m.cols_stats() | rstrip }}
+{{ m.cols_stats(protocols) | rstrip }},
+{{ m.cols_rate_stats() | rstrip }}
 )
 ENGINE = MergeTree()
 PARTITION BY toDate(time_received)
@@ -274,9 +276,10 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_ip_1h
     prefix LowCardinality(String) CODEC(ZSTD(1)),
     dst_addr String CODEC(ZSTD(1)),
     time_received DateTime CODEC(DoubleDelta, LZ4),
-{{ m.cols_sum() | rstrip }}
+{{ m.cols_sum(protocols) | rstrip }},
+{{ m.cols_rate_stats() | rstrip }}
 )
-ENGINE = SummingMergeTree()
+ENGINE = MergeTree()
 PARTITION BY toDate(time_received)
 ORDER BY (prefix, dst_addr, time_received)
 TTL toDate(time_received) + INTERVAL {{ ttl.prefixes_ip_1h }} DAY;
@@ -287,7 +290,8 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_ip_1d
     prefix LowCardinality(String) CODEC(ZSTD(1)),
     dst_addr String CODEC(ZSTD(1)),
     time_received DateTime CODEC(DoubleDelta, LZ4),
-{{ m.cols_stats() | rstrip }}
+{{ m.cols_stats(protocols) | rstrip }},
+{{ m.cols_rate_stats() | rstrip }}
 )
 ENGINE = MergeTree()
 PARTITION BY toDate(time_received)
@@ -311,9 +315,10 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_proto_1h
 (
     prefix LowCardinality(String) CODEC(ZSTD(1)),
     time_received DateTime CODEC(DoubleDelta, LZ4),
-{{ m.cols_sum() | rstrip }}
+{{ m.cols_sum(protocols) | rstrip }},
+{{ m.cols_rate_stats() | rstrip }}
 )
-ENGINE = SummingMergeTree()
+ENGINE = MergeTree()
 PARTITION BY toDate(time_received)
 ORDER BY (prefix, time_received)
 TTL toDate(time_received) + INTERVAL {{ ttl.prefixes_proto_1h }} DAY;
@@ -323,7 +328,8 @@ CREATE TABLE IF NOT EXISTS flows.prefixes_proto_1d
 (
     prefix LowCardinality(String) CODEC(ZSTD(1)),
     time_received DateTime CODEC(DoubleDelta, LZ4),
-{{ m.cols_stats() | rstrip }}
+{{ m.cols_stats(protocols) | rstrip }},
+{{ m.cols_rate_stats() | rstrip }}
 )
 ENGINE = MergeTree()
 PARTITION BY toDate(time_received)

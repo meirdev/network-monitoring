@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import AsyncGenerator
 
 from clickhouse_driver import Client
 from fastapi import FastAPI, Request, status
@@ -15,7 +15,7 @@ from nm.state import State
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[State]:
+async def lifespan(_: FastAPI) -> AsyncGenerator[State, None]:
     yield {
         "client_admin": Client(
             host=settings.clickhouse_dsn_admin.host,
@@ -42,9 +42,7 @@ app = FastAPI(
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     res = response_error(
         [
-            ResponseError(
-                message=f"{'.'.join(err.get('loc'))}: {err.get('msg', 'error')}"
-            )
+            ResponseError(message=f"{err.get('loc')}: {err.get('msg', 'error')}")
             for err in exc.errors()
         ]
     )

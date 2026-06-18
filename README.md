@@ -53,19 +53,19 @@ Username and password for Grafana: `admin:admin`.
 
 Traffic data flows through a feed-forward aggregation pipeline. Each level derives from the one above — only `ip_port_1m` reads from `flows.raw`.
 
-| Table                       | Resolution | Description                                                     |
-| --------------------------- | ---------- | --------------------------------------------------------------- |
-| `flows.prefixes_ip_port_1m` | 1 min      | Traffic by (prefix, dst_addr, dst_port) with wide proto columns |
-| `flows.prefixes_ip_port_1h` | 1 hour     | Hourly sums, bottom 5% ports filtered out                       |
-| `flows.prefixes_ip_port_1d` | 1 day      | Daily p95/max, bottom 5% ports filtered out                     |
-| `flows.prefixes_ip_1m`      | 1 min      | Traffic by (prefix, dst_addr) with wide proto columns           |
-| `flows.prefixes_ip_1h`      | 1 hour     | Hourly sums per host                                            |
-| `flows.prefixes_ip_1d`      | 1 day      | Daily p95/max per host                                          |
-| `flows.prefixes_proto_1m`   | 1 min      | Traffic by (prefix) with wide proto columns                     |
-| `flows.prefixes_proto_1h`   | 1 hour     | Hourly sums per prefix                                          |
-| `flows.prefixes_proto_1d`   | 1 day      | Daily p95/max per prefix                                        |
-| `flows.prefixes_src_1h`     | 1 hour     | Source /16 (IPv4) and /32 (IPv6) network profile per prefix     |
-| `flows.prefixes_src_1d`     | 1 day      | Daily source network profile (summed from 1h)                   |
+| Table                       | Resolution | Description                                                             |
+| --------------------------- | ---------- | ----------------------------------------------------------------------- |
+| `flows.prefixes_ip_port_1m` | 1 min      | Traffic by (prefix, dst_addr, dst_port) with wide proto columns         |
+| `flows.prefixes_ip_port_1h` | 1 hour     | Hourly sums + per-min bps/pps min/max/p95, bottom 5% ports filtered out |
+| `flows.prefixes_ip_port_1d` | 1 day      | Daily p95/max + bps/pps min/max/p95, bottom 5% ports filtered out       |
+| `flows.prefixes_ip_1m`      | 1 min      | Traffic by (prefix, dst_addr) with wide proto columns                   |
+| `flows.prefixes_ip_1h`      | 1 hour     | Hourly sums + per-min bps/pps min/max/p95 per host                      |
+| `flows.prefixes_ip_1d`      | 1 day      | Daily p95/max + bps/pps min/max/p95 per host                            |
+| `flows.prefixes_proto_1m`   | 1 min      | Traffic by (prefix) with wide proto columns                             |
+| `flows.prefixes_proto_1h`   | 1 hour     | Hourly sums + per-min bps/pps min/max/p95 per prefix                    |
+| `flows.prefixes_proto_1d`   | 1 day      | Daily p95/max + bps/pps min/max/p95 per prefix                          |
+| `flows.prefixes_src_1h`     | 1 hour     | Source /16 (IPv4) and /32 (IPv6) network profile per prefix             |
+| `flows.prefixes_src_1d`     | 1 day      | Daily source network profile (summed from 1h)                           |
 
 ### Expression Metrics
 

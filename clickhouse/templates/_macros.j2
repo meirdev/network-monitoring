@@ -1,21 +1,34 @@
 {# --- Column definitions for CREATE TABLE --- #}
 
-{% macro cols_sum() -%}
-{% for p in protos %}
+{% macro cols_sum(ps=protos) -%}
+{% for p in ps %}
     {{ p.name }}_bytes UInt64 CODEC(Delta, ZSTD(1)),
     {{ p.name }}_packets UInt64 CODEC(Delta, ZSTD(1)),
     {{ p.name }}_flows UInt64 CODEC(Delta, ZSTD(1)){{ "," if not loop.last }}
 {% endfor %}
 {%- endmacro %}
 
-{% macro cols_stats() -%}
-{% for p in protos %}
+{% macro cols_stats(ps=protos) -%}
+{% for p in ps %}
     {{ p.name }}_p95_bytes UInt64 CODEC(ZSTD(1)),
     {{ p.name }}_p95_packets UInt64 CODEC(ZSTD(1)),
     {{ p.name }}_p95_flows UInt64 CODEC(ZSTD(1)),
     {{ p.name }}_max_bytes UInt64 CODEC(ZSTD(1)),
     {{ p.name }}_max_packets UInt64 CODEC(ZSTD(1)),
     {{ p.name }}_max_flows UInt64 CODEC(ZSTD(1)){{ "," if not loop.last }}
+{% endfor %}
+{%- endmacro %}
+
+{# min/max/p95 of the per-minute bps & pps rates (protocols only, see rate_stats in generate.py) #}
+
+{% macro cols_rate_stats(ps=protocols) -%}
+{% for p in ps %}
+    {{ p.name }}_min_bps Float64 CODEC(ZSTD(1)),
+    {{ p.name }}_max_bps Float64 CODEC(ZSTD(1)),
+    {{ p.name }}_p95_bps Float64 CODEC(ZSTD(1)),
+    {{ p.name }}_min_pps Float64 CODEC(ZSTD(1)),
+    {{ p.name }}_max_pps Float64 CODEC(ZSTD(1)),
+    {{ p.name }}_p95_pps Float64 CODEC(ZSTD(1)){{ "," if not loop.last }}
 {% endfor %}
 {%- endmacro %}
 
@@ -43,21 +56,57 @@
 {% endfor %}
 {%- endmacro %}
 
-{% macro select_sum() -%}
-{% for p in protos %}
+{% macro select_sum(ps=protos) -%}
+{% for p in ps %}
         sum({{ p.name }}_bytes) AS {{ p.name }}_bytes,
         sum({{ p.name }}_packets) AS {{ p.name }}_packets,
         sum({{ p.name }}_flows) AS {{ p.name }}_flows{{ "," if not loop.last }}
 {% endfor %}
 {%- endmacro %}
 
-{% macro select_quantile_max() -%}
-{% for p in protos %}
+{% macro select_quantile_max(ps=protos) -%}
+{% for p in ps %}
         quantile(0.95)({{ p.name }}_bytes) AS {{ p.name }}_p95_bytes,
         quantile(0.95)({{ p.name }}_packets) AS {{ p.name }}_p95_packets,
         quantile(0.95)({{ p.name }}_flows) AS {{ p.name }}_p95_flows,
         max({{ p.name }}_bytes) AS {{ p.name }}_max_bytes,
         max({{ p.name }}_packets) AS {{ p.name }}_max_packets,
         max({{ p.name }}_flows) AS {{ p.name }}_max_flows{{ "," if not loop.last }}
+{% endfor %}
+{%- endmacro %}
+
+{# Per-minute rates for the 1h CTE: bps = bytes * 8 / 60, pps = packets / 60 (per-minute sum over a 60s bucket). #}
+{# Exposed as distinct columns so the outer SELECT's sum(x) AS x aliases don't shadow them inside min/max/quantile. #}
+
+{% macro select_minute_rates(ps=protocols) -%}
+{% for p in ps %}
+        {{ p.name }}_bytes * 8 / 60 AS {{ p.name }}_bps,
+        {{ p.name }}_packets / 60 AS {{ p.name }}_pps{{ "," if not loop.last }}
+{% endfor %}
+{%- endmacro %}
+
+{# 1h rate stats: min/max/p95 over the per-minute rate columns produced by select_minute_rates. #}
+
+{% macro select_rate_stats(ps=protocols) -%}
+{% for p in ps %}
+        min({{ p.name }}_bps) AS {{ p.name }}_min_bps,
+        max({{ p.name }}_bps) AS {{ p.name }}_max_bps,
+        quantile(0.95)({{ p.name }}_bps) AS {{ p.name }}_p95_bps,
+        min({{ p.name }}_pps) AS {{ p.name }}_min_pps,
+        max({{ p.name }}_pps) AS {{ p.name }}_max_pps,
+        quantile(0.95)({{ p.name }}_pps) AS {{ p.name }}_p95_pps{{ "," if not loop.last }}
+{% endfor %}
+{%- endmacro %}
+
+{# 1d rate stats: roll up the hourly stats — min of mins, max of maxes, avg of the hourly p95s. #}
+
+{% macro select_rate_stats_rollup(ps=protocols) -%}
+{% for p in ps %}
+        min({{ p.name }}_min_bps) AS {{ p.name }}_min_bps,
+        max({{ p.name }}_max_bps) AS {{ p.name }}_max_bps,
+        avg({{ p.name }}_p95_bps) AS {{ p.name }}_p95_bps,
+        min({{ p.name }}_min_pps) AS {{ p.name }}_min_pps,
+        max({{ p.name }}_max_pps) AS {{ p.name }}_max_pps,
+        avg({{ p.name }}_p95_pps) AS {{ p.name }}_p95_pps{{ "," if not loop.last }}
 {% endfor %}
 {%- endmacro %}

@@ -17,15 +17,18 @@ from jinja2 import Environment, FileSystemLoader
 PROTOS = [
     # flag: precomputed boolean in CTE (from raw columns)
     # cond: condition used in sumIf (references precomputed flags)
-    {"name": "any", "cond": None},
-    {"name": "tcp", "cond": "is_tcp", "flag": "proto = 6"},
-    {"name": "udp", "cond": "is_udp", "flag": "proto = 17"},
-    {"name": "gre", "cond": "is_gre", "flag": "proto = 47"},
-    {"name": "esp", "cond": "is_esp", "flag": "proto = 50"},
+    # rate_stats: also emit per-minute min/max/p95 bps & pps stats (L3/L4 protocols only,
+    #             not the tcp_* flag pseudo-protocols)
+    {"name": "any", "cond": None, "rate_stats": True},
+    {"name": "tcp", "cond": "is_tcp", "flag": "proto = 6", "rate_stats": True},
+    {"name": "udp", "cond": "is_udp", "flag": "proto = 17", "rate_stats": True},
+    {"name": "gre", "cond": "is_gre", "flag": "proto = 47", "rate_stats": True},
+    {"name": "esp", "cond": "is_esp", "flag": "proto = 50", "rate_stats": True},
     {
         "name": "icmp",
         "cond": "is_icmp",
         "flag": "(etype = 0x0800 AND proto = 1) OR (etype = 0x86dd AND proto = 58)",
+        "rate_stats": True,
     },
     {
         "name": "tcp_fin",
@@ -77,6 +80,9 @@ TTL = {
     "expression_metrics": 30,
 }
 
+# Protocols kept past the 1m tables (the tcp_* flag pseudo-protocols are 1m-only).
+PROTOCOLS = [p for p in PROTOS if p.get("rate_stats")]
+
 BASE_DIR = Path(__file__).parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 OUTPUT_DIR = BASE_DIR / "initdb.d"
@@ -92,7 +98,7 @@ def main():
 
     env.filters["rstrip"] = lambda s: s.rstrip()
 
-    context = {"protos": PROTOS, "ttl": TTL}
+    context = {"protos": PROTOS, "protocols": PROTOCOLS, "ttl": TTL}
 
     # Render templates
     generated = set()

@@ -200,51 +200,72 @@ CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_proto_1m_mv TO flows.prefi
     GROUP BY prefix, time_received;
 
 
--- 1h rollups: p95/max of per-minute values (from 1m tables)
+-- 1h rollups: hourly sums + per-minute bps/pps min/max/p95 (from 1m tables, FINAL to collapse partial rows)
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_ip_port_1h_mv
 REFRESH EVERY 1 HOUR APPEND TO flows.prefixes_ip_port_1h AS
-    WITH stats AS (
+    WITH per_minute AS (
+        SELECT
+            *,
+{{ m.select_minute_rates() | rstrip }}
+        FROM flows.prefixes_ip_port_1m FINAL
+        WHERE time_received >= NOW() - INTERVAL 1 HOUR
+    ),
+    stats AS (
         SELECT
             prefix,
             dst_addr,
             dst_port,
             toStartOfHour(time_received) AS time_received,
-{{ m.select_sum() | rstrip }},
-            sum(any_bytes) AS total_bytes
-        FROM flows.prefixes_ip_port_1m
-        WHERE time_received >= NOW() - INTERVAL 1 HOUR
+{{ m.select_sum(protocols) | rstrip }},
+{{ m.select_rate_stats() | rstrip }}
+        FROM per_minute
         GROUP BY prefix, dst_addr, dst_port, time_received
     )
-    SELECT * EXCEPT total_bytes
+    -- any_bytes is the hourly sum; drop the bottom 5% of ports per (prefix, dst_addr)
+    SELECT *
     FROM stats
-    QUALIFY total_bytes >= quantile(0.05)(total_bytes) OVER (PARTITION BY prefix, dst_addr);
+    QUALIFY any_bytes >= quantile(0.05)(any_bytes) OVER (PARTITION BY prefix, dst_addr);
 
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_ip_1h_mv
 REFRESH EVERY 1 HOUR APPEND TO flows.prefixes_ip_1h AS
+    WITH per_minute AS (
+        SELECT
+            *,
+{{ m.select_minute_rates() | rstrip }}
+        FROM flows.prefixes_ip_1m FINAL
+        WHERE time_received >= NOW() - INTERVAL 1 HOUR
+    )
     SELECT
         prefix,
         dst_addr,
         toStartOfHour(time_received) AS time_received,
-{{ m.select_sum() | rstrip }}
-    FROM flows.prefixes_ip_1m
-    WHERE time_received >= NOW() - INTERVAL 1 HOUR
+{{ m.select_sum(protocols) | rstrip }},
+{{ m.select_rate_stats() | rstrip }}
+    FROM per_minute
     GROUP BY prefix, dst_addr, time_received;
 
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_proto_1h_mv
 REFRESH EVERY 1 HOUR APPEND TO flows.prefixes_proto_1h AS
+    WITH per_minute AS (
+        SELECT
+            *,
+{{ m.select_minute_rates() | rstrip }}
+        FROM flows.prefixes_proto_1m FINAL
+        WHERE time_received >= NOW() - INTERVAL 1 HOUR
+    )
     SELECT
         prefix,
         toStartOfHour(time_received) AS time_received,
-{{ m.select_sum() | rstrip }}
-    FROM flows.prefixes_proto_1m
-    WHERE time_received >= NOW() - INTERVAL 1 HOUR
+{{ m.select_sum(protocols) | rstrip }},
+{{ m.select_rate_stats() | rstrip }}
+    FROM per_minute
     GROUP BY prefix, time_received;
 
 
--- 1d rollups: p95/max of hourly p95 values (from 1h tables)
+-- 1d rollups: p95/max of hourly values + bps/pps min-of-min, max-of-max, avg-of-hourly-p95 (from 1h tables)
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS flows.prefixes_ip_port_1d_mv
 REFRESH EVERY 1 DAY APPEND TO flows.prefixes_ip_port_1d AS
@@ -254,7 +275,8 @@ REFRESH EVERY 1 DAY APPEND TO flows.prefixes_ip_port_1d AS
             dst_addr,
             dst_port,
             toStartOfDay(time_received) AS time_received,
-{{ m.select_quantile_max() | rstrip }},
+{{ m.select_quantile_max(protocols) | rstrip }},
+{{ m.select_rate_stats_rollup() | rstrip }},
             sum(any_bytes) AS total_bytes
         FROM flows.prefixes_ip_port_1h
         WHERE time_received >= NOW() - INTERVAL 1 DAY
@@ -270,7 +292,8 @@ REFRESH EVERY 1 DAY APPEND TO flows.prefixes_proto_1d AS
     SELECT
         prefix,
         toStartOfDay(time_received) AS time_received,
-{{ m.select_quantile_max() | rstrip }}
+{{ m.select_quantile_max(protocols) | rstrip }},
+{{ m.select_rate_stats_rollup() | rstrip }}
     FROM flows.prefixes_proto_1h
     WHERE time_received >= NOW() - INTERVAL 1 DAY
     GROUP BY prefix, time_received;
@@ -282,7 +305,8 @@ REFRESH EVERY 1 DAY APPEND TO flows.prefixes_ip_1d AS
         prefix,
         dst_addr,
         toStartOfDay(time_received) AS time_received,
-{{ m.select_quantile_max() | rstrip }}
+{{ m.select_quantile_max(protocols) | rstrip }},
+{{ m.select_rate_stats_rollup() | rstrip }}
     FROM flows.prefixes_ip_1h
     WHERE time_received >= NOW() - INTERVAL 1 DAY
     GROUP BY prefix, dst_addr, time_received;
