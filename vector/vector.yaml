@@ -1,0 +1,69 @@
+data_dir: /var/lib/vector
+
+api:
+  enabled: true
+  address: "0.0.0.0:8686"
+
+sources:
+  goflow2:
+    type: kafka
+    bootstrap_servers: "kafka:9093"
+    group_id: goflow2
+    topics:
+      - flows
+    decoding:
+      codec: protobuf
+      protobuf:
+        desc_file: /etc/vector/flow.proto
+        message_type: flowpb.FlowMessage
+    framing:
+      method: varint_length_delimited
+    auto_offset_reset: latest
+
+transforms:
+  goflow2_fields:
+    type: remap
+    inputs:
+      - goflow2
+    source: |
+      .dst_addr        = ip_ntop!(.dst_addr)
+      .src_addr        = ip_ntop!(.src_addr)
+      .sampler_address = ip_ntop!(.sampler_address)
+
+      .next_hop        = ip_to_ipv6(ip_ntop(.next_hop) ?? "::") ?? "::"
+
+      .time_flow_start = from_unix_timestamp!(.time_flow_start_ns, unit: "nanoseconds")
+      .time_flow_end   = from_unix_timestamp!(.time_flow_end_ns, unit: "nanoseconds")
+      .time_received   = from_unix_timestamp!(.time_received_ns, unit: "nanoseconds")
+
+sinks:
+  debug:
+    type: console
+    inputs:
+      - goflow2_fields
+    encoding:
+      codec: json
+      only_fields:
+        - type
+        - time_received
+        - time_flow_start
+        - time_flow_end
+        - sampler_address
+        - sampling_rate
+        - bytes
+        - packets
+        - src_addr
+        - dst_addr
+        - src_port
+        - dst_port
+        - etype
+        - proto
+        - tcp_flags
+        - in_if
+        - out_if
+        - src_as
+        - dst_as
+        - next_hop
+        - forwarding_status
+        - src_net
+        - dst_net
