@@ -29,6 +29,10 @@ services:
     image: grafana/grafana:12.3
     container_name: network-monitoring-grafana
     environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_BASIC_ENABLED: "false"
       GF_INSTALL_PLUGINS: vertamedia-clickhouse-datasource 3.3.1,grafana-clickhouse-datasource
     ports:
       - "3000:3000"
@@ -40,7 +44,7 @@ services:
       - grafana:/var/lib/grafana
 
   prometheus:
-    image: prom/prometheus:v3.4.0
+    image: prom/prometheus:v3.14.0
     container_name: network-monitoring-prometheus
     ports:
       - "9090:9090"
@@ -67,7 +71,7 @@ services:
       - kafka
 
   db:
-    image: clickhouse/clickhouse-server:25.10
+    image: clickhouse/clickhouse-server:26.8
     container_name: network-monitoring-clickhouse
     restart: always
     environment:
